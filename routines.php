@@ -1,0 +1,446 @@
+<?php
+// routines.php - Rutinas de Ejercicio del Gimnasio Virtual
+session_start();
+require_once 'db_helper.php';
+
+// Redireccionar si no ha iniciado sesión
+if (!isset($_SESSION['username'])) {
+    header('Location: app.php');
+    exit;
+}
+
+$username = $_SESSION['username'];
+
+// Procesar Peticiones AJAX de Rutinas
+if (isset($_GET['ajax'])) {
+    header('Content-Type: application/json');
+    
+    if ($_GET['ajax'] === 'search_exercises') {
+        $q = trim($_GET['q'] ?? '');
+        $res = search_exercisedb_exercises($q);
+        echo json_encode($res);
+        exit;
+    }
+    
+    if ($_GET['ajax'] === 'save_routine') {
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        if (!$data) {
+            echo json_encode(['success' => false, 'error' => 'Datos inválidos']);
+            exit;
+        }
+        $res = db_save_routine($username, $data);
+        echo json_encode($res);
+        exit;
+    }
+    
+    if ($_GET['ajax'] === 'get_routines') {
+        $res = db_get_routines($username);
+        echo json_encode(['success' => true, 'routines' => $res]);
+        exit;
+    }
+    
+    if ($_GET['ajax'] === 'delete_routine') {
+        $id = intval($_POST['id'] ?? 0);
+        $res = db_delete_routine($username, $id);
+        echo json_encode(['success' => $res]);
+        exit;
+    }
+    
+    if ($_GET['ajax'] === 'duplicate_routine') {
+        $id = intval($_POST['id'] ?? 0);
+        $res = db_duplicate_routine($username, $id);
+        echo json_encode($res);
+        exit;
+    }
+    
+    if ($_GET['ajax'] === 'save_workout_log') {
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        if (!$data) {
+            echo json_encode(['success' => false, 'error' => 'Datos inválidos']);
+            exit;
+        }
+        $res = db_save_workout_log($username, $data);
+        echo json_encode($res);
+        exit;
+    }
+    
+    if ($_GET['ajax'] === 'get_workout_logs') {
+        $routineId = intval($_GET['routine_id'] ?? 0);
+        $res = db_get_workout_logs($username, $routineId);
+        echo json_encode(['success' => true, 'logs' => $res]);
+        exit;
+    }
+    
+    echo json_encode(['success' => false, 'error' => 'Acción ajax no válida']);
+    exit;
+}
+
+$userData = db_get_user_data($username);
+if ($userData['profile'] === null) {
+    header('Location: app.php');
+    exit;
+}
+
+$profile = $userData['profile'];
+$users = db_load_users();
+$userRecord = isset($users[$username]) ? $users[$username] : null;
+$initial = strtoupper(substr($username, 0, 1));
+$default_avatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100' height='100'><circle cx='50' cy='50' r='50' fill='%23ff2a2a'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='%23ffffff' font-family='Outfit, sans-serif' font-size='50' font-weight='800'>{$initial}</text></svg>";
+$avatar = ($userRecord && !empty($userRecord['avatar']) && file_exists(__DIR__ . '/' . $userRecord['avatar'])) ? $userRecord['avatar'] : $default_avatar;
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrena Con Max - Centro de Entrenamiento</title>
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="bg-glow" id="bgGlow"></div>
+
+    <!-- Navegación -->
+    <header id="header">
+        <div class="container navbar">
+            <a href="index.php" class="logo">
+                <span>ENTRENA CON</span> MAX
+            </a>
+            
+            <div class="menu-toggle" id="mobileMenu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.php">Inicio</a></li>
+                <li><a href="app.php">Calorías</a></li>
+                <li><a href="routines.php" class="active">Rutinas</a></li>
+                <li><a href="config.php">Configuración</a></li>
+                <li>
+                    <a href="config.php" class="nav-avatar-container" title="Configuración de Perfil">
+                        <img src="<?= $avatar ?>" class="nav-avatar" alt="Avatar">
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <div class="container routines-layout">
+        <!-- Encabezado de Rutinas -->
+        <div class="dashboard-header" style="margin-bottom: 2rem;">
+            <div>
+                <h2 class="text-gradient" style="font-size: 2.2rem; text-transform: uppercase;">PANEL DE ENTRENAMIENTO</h2>
+                <p style="color: var(--text-secondary); margin-top: 0.3rem;">Planifica tus rutinas, explora ejercicios y registra tu sobrecarga progresiva.</p>
+            </div>
+        </div>
+
+        <!-- Acciones Principales -->
+        <div class="routines-actions-bar">
+            <button class="btn-primary" onclick="openRoutineModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nueva Rutina
+            </button>
+            <button class="btn-secondary" onclick="openExploreModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Explorar Ejercicios
+            </button>
+        </div>
+
+        <!-- Sección Principal: Mis Rutinas -->
+        <div class="routines-section">
+            <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; text-transform: uppercase;">Mis Rutinas</h3>
+            <div class="routines-grid" id="myRoutinesGrid">
+                <!-- Se cargan dinámicamente mediante JS -->
+                <div class="chart-empty-state" style="grid-column: 1 / -1; padding: 3rem; text-align: center;">Cargando tus rutinas...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODALES DE LA APLICACIÓN ================= -->
+
+    <!-- 1. MODAL CREAR / EDITAR RUTINA -->
+    <div class="modal" id="routineModal">
+        <div class="modal-backdrop" onclick="closeRoutineModal()"></div>
+        <div class="modal-content" style="max-width: 750px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3 id="routineModalTitle" style="margin-bottom:0;">Crear Rutina Nueva</h3>
+                <button class="btn-modal-close" onclick="closeRoutineModal()">&times;</button>
+            </div>
+            <form id="routineForm" onsubmit="saveRoutine(event)">
+                <input type="hidden" id="routine_edit_id" value="">
+                
+                <div class="form-group">
+                    <label for="routine_title_input">Título de la Rutina</label>
+                    <input type="text" id="routine_title_input" class="form-control" placeholder="Ej. Día A: Empuje Pecho/Hombro" required>
+                </div>
+
+                <div class="routine-exercises-setup">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.1rem; border-left: 3px solid var(--primary); padding-left: 0.5rem; text-transform: uppercase;">Ejercicios de la Rutina</h4>
+                    
+                    <div id="setupExercisesContainer">
+                        <!-- Ejercicios agregados dinámicamente -->
+                    </div>
+
+                    <!-- Botón agregar ejercicio -->
+                    <div class="setup-add-exercise-box" style="margin-top: 1.5rem;">
+                        <button type="button" class="btn-secondary" style="width:100%; display:flex; justify-content:center; align-items:center; gap:0.5rem;" onclick="showAddExerciseSearch()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Agregar Ejercicio
+                        </button>
+                        
+                        <!-- Caja de búsqueda oculta por defecto -->
+                        <div id="searchExerciseBox" class="exercise-search-container" style="display:none; margin-top: 1rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 1rem; border-radius: 8px;">
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="text" id="setup_exercise_search_input" class="form-control" placeholder="Buscar ejercicio, ej: Bench Press, Squat..." oninput="searchExercisesSetup()">
+                                <button type="button" class="btn-primary" onclick="searchExercisesSetup(true)">Buscar</button>
+                            </div>
+                            <div id="setup_search_results" class="search-results-dropdown-inline" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 2rem;">
+                    <button type="button" class="btn-secondary" onclick="closeRoutineModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Rutina</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. MODAL DETALLE DE RUTINA, HISTORIAL Y GRÁFICO -->
+    <div class="modal" id="routineDetailsModal">
+        <div class="modal-backdrop" onclick="closeRoutineDetailsModal()"></div>
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3 id="detailRoutineTitle" style="margin-bottom:0; text-transform: uppercase;">Detalle de Rutina</h3>
+                <button class="btn-modal-close" onclick="closeRoutineDetailsModal()">&times;</button>
+            </div>
+            
+            <div class="detail-routine-body">
+                <!-- Gráfica de Progreso -->
+                <div class="routine-progress-chart-box" style="margin-bottom: 2rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; flex-wrap: wrap; gap:1rem;">
+                        <h4 style="color: white; margin: 0; font-size: 1rem; text-transform: uppercase;">Progreso de Entrenamiento</h4>
+                        <div class="chart-btn-group" style="display:flex; gap:0.3rem; background: var(--bg-primary); padding: 3px; border-radius: 6px; border: 1px solid var(--border);">
+                            <button class="chart-tab-btn active" id="btnChartVolumen" onclick="changeChartMetric('volumen')">Volumen</button>
+                            <button class="chart-tab-btn" id="btnChartReps" onclick="changeChartMetric('repeticiones')">Reps</button>
+                            <button class="chart-tab-btn" id="btnChartDuration" onclick="changeChartMetric('duracion')">Duración</button>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-wrapper" style="height: 220px; position:relative;">
+                        <svg class="weight-chart-svg" id="routineProgressChartSvg" viewBox="0 0 500 220" style="width: 100%; height: 100%;">
+                            <!-- Cargado dinámicamente por JS -->
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Lista de Ejercicios Planificados -->
+                <h4 style="color: white; margin-bottom: 1rem; font-size: 1.1rem; border-left: 3px solid var(--primary); padding-left: 0.5rem; text-transform: uppercase;">Ejercicios Planificados</h4>
+                <div id="detailExercisesList" style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                    <!-- Cargados por JS -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeRoutineDetailsModal()">Cerrar</button>
+                <button type="button" class="btn-primary" id="btnDetailStartWorkout" onclick="startWorkoutFromDetail()">Comenzar Rutina</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. INTERFAZ DE ENTRENAMIENTO ACTIVO (OVERLAY INMERSIVO) -->
+    <div class="workout-active-overlay" id="workoutActiveOverlay" style="display: none;">
+        <div class="workout-active-container">
+            <!-- Header Fijo -->
+            <div class="workout-active-header">
+                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                    <div>
+                        <h2 id="activeWorkoutTitle" style="margin:0; font-size: 1.6rem; text-transform: uppercase; color: var(--primary);">ENTRENANDO</h2>
+                        <span id="activeWorkoutSubtitle" style="font-size: 0.85rem; color: var(--text-secondary);">Sesión de ejercicio activa</span>
+                    </div>
+                    <div class="header-timer-widget" onclick="editActiveTimer()" onmouseover="this.style.background='rgba(255, 42, 42, 0.25)'" onmouseout="this.style.background='rgba(255, 42, 42, 0.12)'" style="cursor: pointer; background: rgba(255, 42, 42, 0.12); border: 1px dashed var(--primary); padding: 0.4rem 0.8rem; border-radius: 8px; display: flex; align-items: center; gap: 0.4rem; transition: var(--transition);" title="Haga clic para editar el tiempo">
+                        <span style="font-size: 0.9rem;">⏳</span>
+                        <span id="activeTimerHeader" style="font-size: 1.2rem; font-weight: 800; color: white; font-family: monospace;">00:00:00</span>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="finishWorkout()" style="padding: 0.6rem 1.5rem; font-size: 0.95rem; border-radius: 6px;">Terminar</button>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="workout-active-stats">
+                <div class="active-stat-item">
+                    <span class="active-stat-lbl">Duración</span>
+                    <span class="active-stat-val" id="activeTimer">00:00:00</span>
+                </div>
+                <div class="active-stat-item">
+                    <span class="active-stat-lbl">Volumen Total</span>
+                    <span class="active-stat-val" id="activeVolume">0 kg</span>
+                </div>
+                <div class="active-stat-item">
+                    <span class="active-stat-lbl">Series Listas</span>
+                    <span class="active-stat-val" id="activeSetsCount">0 / 0</span>
+                </div>
+            </div>
+
+            <!-- Zona de Ejercicios -->
+            <div class="workout-active-body" id="activeExercisesContainer">
+                <!-- Se inyectan los ejercicios activos -->
+            </div>
+
+            <!-- Botones de Control Inferiores -->
+            <div class="workout-active-footer-controls">
+                <button class="btn-secondary" style="font-size: 0.95rem; padding: 0.8rem;" onclick="showWorkoutAddExerciseSearch()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Agregar Ejercicio
+                </button>
+                <button class="btn-secondary" style="font-size: 0.95rem; padding: 0.8rem;" onclick="openWorkoutSettings()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    Configuraciones
+                </button>
+                <button class="btn-secondary" style="font-size: 0.95rem; padding: 0.8rem; border-color: var(--primary); color: var(--primary);" onclick="discardWorkout()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    Descartar Entreno
+                </button>
+            </div>
+            
+            <!-- Caja de búsqueda de ejercicio en entrenamiento (oculto por defecto) -->
+            <div id="workoutSearchExerciseBox" class="exercise-search-container" style="display:none; margin: 1.5rem auto; max-width: 600px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); padding: 1.5rem; border-radius: 8px;">
+                <h4 style="color:white; margin-top:0;">Agregar Ejercicio en Vivo</h4>
+                <div style="display:flex; gap:0.5rem; margin-bottom: 0.5rem;">
+                    <input type="text" id="workout_exercise_search_input" class="form-control" placeholder="Buscar ejercicio, ej: Bicep Curl..." oninput="searchExercisesWorkout()">
+                    <button type="button" class="btn-primary" onclick="searchExercisesWorkout(true)">Buscar</button>
+                </div>
+                <div id="workout_search_results" class="search-results-dropdown-inline" style="display:none;"></div>
+                <button type="button" class="btn-secondary" style="width:100%; margin-top:0.5rem;" onclick="hideWorkoutAddExerciseSearch()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MODAL CONFIGURACIONES DE ENTRENAMIENTO -->
+    <div class="modal" id="workoutSettingsModal">
+        <div class="modal-backdrop" onclick="closeWorkoutSettings()"></div>
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 style="margin-bottom:0;">Ajustes de Sesión</h3>
+                <button class="btn-modal-close" onclick="closeWorkoutSettings()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 1rem;">
+                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+                    <label style="margin:0; font-size: 0.95rem; text-transform:none;" for="settingDisableRestTimer">Desactivar temporizador de descanso</label>
+                    <input type="checkbox" id="settingDisableRestTimer" style="width:20px; height:20px; cursor:pointer;" onchange="saveSessionSettings()">
+                </div>
+                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="margin:0; font-size: 0.95rem; text-transform:none;" for="settingLoadPreviousValues">Establecer valores del entreno anterior</label>
+                    <input type="checkbox" id="settingLoadPreviousValues" style="width:20px; height:20px; cursor:pointer;" onchange="saveSessionSettings()">
+                </div>
+            </div>
+            <div class="modal-footer" style="padding-top:1rem;">
+                <button type="button" class="btn-primary" onclick="closeWorkoutSettings()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. MODAL RESUMEN DEL ENTRENAMIENTO (TERMINAR) -->
+    <div class="modal" id="workoutSummaryModal">
+        <div class="modal-backdrop" onclick="closeWorkoutSummary()"></div>
+        <div class="modal-content" style="max-width: 600px; max-height: 85vh; overflow-y:auto;">
+            <div class="modal-header">
+                <h3 style="margin-bottom:0; text-transform: uppercase; color: var(--primary);">Resumen de Entrenamiento</h3>
+                <button class="btn-modal-close" onclick="closeWorkoutSummary()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 1.5rem;">
+                <h4 style="text-align: center; color: white; font-size: 1.5rem; margin-bottom: 1.5rem;">¡Felicidades, terminaste! 🏆</h4>
+                
+                <div class="summary-stats-grid" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; text-align:center; margin-bottom: 2rem;">
+                    <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                        <span style="font-size:0.8rem; color:var(--text-secondary); display:block;">Tiempo Total</span>
+                        <strong style="font-size: 1.2rem; color:var(--primary);" id="summaryDuration">00:00</strong>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                        <span style="font-size:0.8rem; color:var(--text-secondary); display:block;">Volumen</span>
+                        <strong style="font-size: 1.2rem; color:var(--primary);" id="summaryVolume">0 kg</strong>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                        <span style="font-size:0.8rem; color:var(--text-secondary); display:block;">Series Listas</span>
+                        <strong style="font-size: 1.2rem; color:var(--primary);" id="summarySets">0</strong>
+                    </div>
+                </div>
+
+                <h4 style="color: white; margin-bottom: 0.8rem; font-size: 1rem; text-transform: uppercase;">Revisa tu actividad:</h4>
+                <div id="summaryExerciseList" style="display:flex; flex-direction:column; gap:0.6rem; max-height: 250px; overflow-y:auto; padding-right:5px; margin-bottom: 2rem;">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeWorkoutSummary()">Volver</button>
+                <button type="button" class="btn-primary" onclick="saveWorkoutLogToDB()">Guardar en Base de Datos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. MODAL EXPLORAR EJERCICIOS -->
+    <div class="modal" id="exploreModal">
+        <div class="modal-backdrop" onclick="closeExploreModal()"></div>
+        <div class="modal-content" style="max-width: 650px; max-height: 85vh; overflow-y:auto;">
+            <div class="modal-header">
+                <h3 style="margin-bottom:0; text-transform: uppercase;">Explorar Ejercicios</h3>
+                <button class="btn-modal-close" onclick="closeExploreModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top:1.5rem;">
+                <div class="form-group">
+                    <label for="explore_search_input">Buscar en base de datos de ejercicios (ExerciseDB)</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="text" id="explore_search_input" class="form-control" placeholder="Ej: Dumbbell, Barbell, chest, biceps..." onkeyup="if(event.key==='Enter') searchExercisesExplore()">
+                        <button type="button" class="btn-primary" onclick="searchExercisesExplore()">Buscar</button>
+                    </div>
+                </div>
+                
+                <div id="exploreResultsList" style="display:flex; flex-direction:column; gap:0.8rem; margin-top: 1.5rem; max-height: 400px; overflow-y:auto; padding-right:5px;">
+                    <!-- Lista de resultados -->
+                    <div class="chart-empty-state">Escribe algún término para iniciar la búsqueda en ExerciseDB.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeExploreModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rest Timer Overlay (Pitido descando flotante en esquina) -->
+    <div class="rest-timer-widget" id="restTimerWidget" style="display: none;">
+        <span id="restTimerProgress">Descanso: 60s</span>
+        <button onclick="skipRestTimer()">Saltar</button>
+    </div>
+
+    <!-- Footer -->
+    <footer style="margin-top: 5rem;">
+        <div class="container">
+            <p>&copy; <?= date('Y') ?> Entrena Con Max. Todos los derechos reservados. Diseñado para optimizar tu rendimiento.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        window.userRoutines = [];
+        window.activeWorkout = null;
+        window.currentChartMetric = 'volumen';
+        window.selectedRoutineForDetail = null;
+        
+        // Configuraciones de Sesión
+        window.workoutSessionSettings = {
+            disableRestTimer: false,
+            loadPreviousValues: true
+        };
+    </script>
+    <script src="js/app.js"></script>
+</body>
+</html>

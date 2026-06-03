@@ -1,0 +1,15 @@
+# Database & Secrets
+*.db
+*.sqlite
+fatsecret_token.txt
+user_data.txt.bak
+users.txt.bak
+
+# OS Temp Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Local PHP Server logs
+*.log

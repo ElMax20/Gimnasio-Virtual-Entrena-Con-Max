@@ -1,0 +1,266 @@
+<?php
+// index.php - Landing Page Pública del Gimnasio Virtual
+session_start();
+require_once 'db_helper.php';
+$isLoggedIn = isset($_SESSION['username']);
+$avatar = '';
+if ($isLoggedIn) {
+    $username = $_SESSION['username'];
+    $users = db_load_users();
+    $userRecord = isset($users[$username]) ? $users[$username] : null;
+    $initial = strtoupper(substr($username, 0, 1));
+    $default_avatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100' height='100'><circle cx='50' cy='50' r='50' fill='%23ff2a2a'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='%23ffffff' font-family='Outfit, sans-serif' font-size='50' font-weight='800'>{$initial}</text></svg>";
+    $avatar = ($userRecord && !empty($userRecord['avatar']) && file_exists(__DIR__ . '/' . $userRecord['avatar'])) ? $userRecord['avatar'] : $default_avatar;
+}
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrena Con Max - Gimnasio Virtual y Seguidor de Calorías</title>
+    <meta name="description" content="Alcanza tus objetivos físicos con nuestra calculadora médica de calorías Mifflin-St Jeor y seguidor inteligente de rutinas en un diseño premium.">
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Efecto resplandor de fondo -->
+    <div class="bg-glow" id="bgGlow"></div>
+
+    <!-- Navegación -->
+    <header id="header">
+        <div class="container navbar">
+            <a href="index.php" class="logo">
+                <span>ENTRENA CON</span> MAX
+            </a>
+            
+            <div class="menu-toggle" id="mobileMenu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#inicio" class="active">Inicio</a></li>
+                <li><a href="#calorias">Calorías</a></li>
+                <li><a href="#rutinas">Rutinas</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+                <?php if ($isLoggedIn): ?>
+                    <li>
+                        <a href="config.php" class="nav-avatar-container" title="Configuración de Perfil">
+                            <img src="<?= $avatar ?>" class="nav-avatar" alt="Avatar">
+                        </a>
+                    </li>
+                <?php else: ?>
+                    <li><a href="app.php" class="btn-header">Iniciar Sesión</a></li>
+                <?php endif; ?>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="inicio">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <h1 class="text-gradient">ENTRENA CON INTELIGENCIA.</h1>
+                <h1 style="margin-top: -10px;">DOMINA TU NUTRICIÓN.</h1>
+                <p>
+                    Bienvenido a <strong>Entrena Con Max</strong>, tu Gimnasio Virtual de alto rendimiento. Nuestra plataforma combina el cálculo calórico científico de precisión médica con un seguidor de rutinas avanzado para esculpir el físico que deseas.
+                </p>
+                <div class="hero-actions">
+                    <a href="app.php" class="btn-primary">
+                        Probar Nuestro Producto
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
+                    <a href="#calorias" class="btn-secondary">Saber más</a>
+                </div>
+            </div>
+            <div class="hero-image-container">
+                <img src="img/gym_hero.png" alt="Entrena Con Max Gimnasio Virtual de Alto Rendimiento" class="hero-image">
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Contar Calorías -->
+    <section class="section" id="calorias">
+        <div class="container">
+            <div class="section-header">
+                <h2>Control Calórico Científico</h2>
+                <p>No adivinamos tus requerimientos, aplicamos la ciencia exacta de la nutrición deportiva moderna.</p>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-text">
+                    <h3>¿Cómo contamos tus calorías?</h3>
+                    <p>
+                        Para que consigas tu objetivo de forma eficiente y sostenible, implementamos la <strong>Fórmula de Mifflin-St Jeor</strong>, validada médicamente como la calculadora de Tasa Metabólica Basal (TMB) más precisa de la actualidad.
+                    </p>
+                    <p>
+                        No solo calculamos tus necesidades de mantenimiento (GETD), sino que diseñamos un <strong>déficit o superávit inteligente</strong> de 400 kcal según tu meta (perder grasa o ganar músculo), resguardando tu salud con límites de seguridad inquebrantables de 1,200 kcal para mujeres y 1,500 kcal para hombres.
+                    </p>
+                    
+                    <ul class="info-feature-list">
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Fórmula Mifflin-St Jeor calibrada por edad, sexo y estatura.
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Desglose exacto de macronutrientes (Proteínas, Grasas, Carbohidratos).
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Reajuste automático al actualizar tu peso semanal.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="info-visual">
+                    <h4 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 1.5rem; font-weight: 800;">EL MÉTODO EN CRUDO ⚖️</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Cocinar cambia el peso del alimento (el arroz absorbe agua y se expande; la carne pierde agua y se encoge), pero las calorías energéticas no cambian. El secreto está en pesar en crudo.
+                    </p>
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 1.2rem; border-radius: 8px; font-size: 0.85rem; line-height: 1.6;">
+                        <span style="font-weight: 700; color: white; display: block; margin-bottom: 0.5rem;">Fórmula de Proporción Alimenticia:</span>
+                        <code style="color: var(--primary); font-weight: 700; font-size: 0.95rem; display: block; text-align: center; background: rgba(0,0,0,0.5); padding: 0.5rem; border-radius: 4px; margin-bottom: 0.8rem;">
+                            Calorías de tu porción = (Tus gramos / 100) * Calorías por cada 100g
+                        </code>
+                        <span style="color: var(--text-muted);">Suma tus ingredientes de forma exacta: 1g Proteína = 4 kcal, 1g Carbohidratos = 4 kcal, 1g Grasas = 9 kcal. Nuestra aplicación hace este cálculo matemático instantáneamente.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Rutinas de Ejercicio -->
+    <section class="section" id="rutinas">
+        <div class="container">
+            <div class="section-header">
+                <h2>Planificación Física de Fuerza</h2>
+                <p>Diseño de entrenamiento enfocado para activar el estímulo muscular y acelerar tus resultados.</p>
+            </div>
+
+            <div class="info-grid reverse">
+                <div class="info-text">
+                    <h3>¿Cómo organizamos tu entrenamiento?</h3>
+                    <p>
+                        El ejercicio y la alimentación van de la mano. Si tu objetivo es perder grasa, las rutinas se programan para conservar tu masa muscular activa mediante cardio estratégico y entrenamiento de fuerza con circuitos de alta densidad.
+                    </p>
+                    <p>
+                        Si buscas ganar masa muscular, adaptamos tus rutinas para generar tensión mecánica e hipertrofia progresiva. Nuestra interfaz te permite consultar tus rutinas de manera ordenada, marcar tus avances diarios y estructurar tu semana de forma consistente.
+                    </p>
+                    
+                    <ul class="info-feature-list">
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Rutinas estructuradas por grupos musculares y días de la semana.
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Ejercicios explicados con series, repeticiones y tiempos de descanso.
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Adaptable a tu nivel de fuerza (Bajo, Moderado, Alto).
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="info-visual">
+                    <h4 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 1.5rem; font-weight: 800;">PERIODIZACIÓN DE FUERZA 💪</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        La clave para el desarrollo físico es la sobrecarga progresiva. Registra tus pesos levantados y observa tu evolución. 
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: center;">
+                        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 1rem; border-radius: 8px;">
+                            <span style="font-size: 1.5rem; display: block; margin-bottom: 0.2rem;">🔥</span>
+                            <span style="font-weight: 700; color: white; font-size: 0.85rem; display: block; margin-bottom: 0.2rem;">Déficit Calórico</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Definición muscular e incremento de cardio ligero.</span>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 1rem; border-radius: 8px;">
+                            <span style="font-size: 1.5rem; display: block; margin-bottom: 0.2rem;">⚡</span>
+                            <span style="font-weight: 700; color: white; font-size: 0.85rem; display: block; margin-bottom: 0.2rem;">Superávit Anabólico</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Construcción de fibra muscular y aumento de fuerza base.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Contacto -->
+    <section class="section" id="contacto">
+        <div class="container">
+            <div class="section-header">
+                <h2>¿Tienes Alguna Pregunta?</h2>
+                <p>Contáctanos directamente y uno de nuestros entrenadores se comunicará contigo.</p>
+            </div>
+
+            <div class="contact-container">
+                <div class="contact-info">
+                    <div class="contact-info-top">
+                        <h3>Contacto Inmediato</h3>
+                        <p>Estamos listos para guiarte en tu camino físico. No dudes en escribirnos.</p>
+                    </div>
+                    
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            </div>
+                            <div>
+                                <h4>Teléfono</h4>
+                                <p>+56 9 1234 5678</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            </div>
+                            <div>
+                                <h4>Correo Electrónico</h4>
+                                <p>soporte@entrenaconmax.com</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-form-wrapper">
+                    <form action="#" method="POST" onsubmit="event.preventDefault(); alert('¡Mensaje enviado con éxito! Nos contactaremos a la brevedad.'); this.reset();">
+                        <div class="form-group">
+                            <label for="nombre">Nombre Completo</label>
+                            <input type="text" id="nombre" class="form-control" placeholder="Escribe tu nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email de Contacto</label>
+                            <input type="email" id="email" class="form-control" placeholder="Escribe tu correo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mensaje">Mensaje</label>
+                            <textarea id="mensaje" class="form-control" placeholder="¿En qué podemos ayudarte?" required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+                            Enviar Mensaje
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; <?= date('Y') ?> Entrena Con Max. Todos los derechos reservados. Diseñado para optimizar tu rendimiento.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+</html>

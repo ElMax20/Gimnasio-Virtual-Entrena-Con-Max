@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrena Con Max - Dashboard Virtual</title>
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/github-pages-compat.js"></script>\n</head>
+<body>
+    <div class="bg-glow" id="bgGlow"></div>
+
+    <!-- Navegación -->
+    <header id="header">
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <span>ENTRENA CON</span> MAX
+            </a>
+            
+            <div class="menu-toggle" id="mobileMenu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Inicio</a></li>
+                
+                    <li id="nav-user-item" style="display: none;">
+                        <a href="config.html" class="nav-avatar-container" title="Configuración de Perfil">
+                            <img src="" class="nav-avatar" id="nav-user-avatar" alt="Avatar">
+                        </a>
+                    </li>
+                    <li id="nav-login-item">
+                        <a href="app.html" class="btn-header">Iniciar Sesión</a>
+                    </li>
+            </ul>
+        </div>
+    </header>
+
+    <div id="state-logged-out" style="display:none;">
+        <!-- PANTALLA DE INICIAR SESIÓN / REGISTRARSE -->
+        <div class="auth-page">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="logo"><span>ENTRENA CON</span> MAX</div>
+                    <p>Ingresa tus credenciales para acceder al Gimnasio Virtual.</p>
+                </div>
+
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab('login')">Iniciar Sesión</button>
+                    <button class="auth-tab" onclick="switchAuthTab('register')">Registrar</button>
+                </div>
+
+                
+                    <div class="auth-alert error"></div>
+                </div>
+                
+                    <div class="auth-alert success"></div>
+                </div>
+
+                <!-- Formulario Login -->
+                <form action="app.html" method="POST" class="auth-form active" id="loginForm">
+                    <input type="hidden" name="action" value="login">
+                    <div class="form-group">
+                        <label for="login_user">Nombre de Usuario</label>
+                        <input type="text" id="login_user" name="username" class="form-control" placeholder="Introduce tu usuario" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login_pass">Contraseña</label>
+                        <input type="password" id="login_pass" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+                        Entrar a la Plataforma
+                    </button>
+                    <div style="text-align: center; margin-top: 1.5rem;">
+                        <button type="button" class="btn-secondary" style="width: 100%; font-size: 0.95rem; display: flex; justify-content: center; align-items: center;" onclick="switchAuthTab('register')">
+                            ¿No tienes cuenta? Regístrate
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Formulario Registro -->
+                <form action="app.html" method="POST" class="auth-form" id="registerForm">
+                    <input type="hidden" name="action" value="register">
+                    <div class="form-group">
+                        <label for="reg_user">Nombre de Usuario</label>
+                        <input type="text" id="reg_user" name="username" class="form-control" placeholder="Elige tu nombre de usuario" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_email">Correo Electrónico</label>
+                        <input type="email" id="reg_email" name="email" class="form-control" placeholder="tucorreo@ejemplo.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg_pass">Contraseña</label>
+                        <input type="password" id="reg_pass" name="password" class="form-control" placeholder="Crea una contraseña segura" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+                        Crear Cuenta Nueva
+                    </button>
+                    <div style="text-align: center; margin-top: 1.5rem;">
+                        <button type="button" class="btn-secondary" style="width: 100%; font-size: 0.95rem; display: flex; justify-content: center; align-items: center;" onclick="switchAuthTab('login')">
+                            ¿Ya tienes cuenta? Inicia Sesión
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>\n<div id="state-onboarding" style="display:none;">
+        <!-- FORMULARIO DE ONBOARDING -->
+        <div class="onboarding-page">
+            <div class="onboarding-card">
+                <div class="onboarding-header">
+                    <h2>Configura tu Perfil</h2>
+                    <p>Cuéntanos sobre ti para calibrar tus macros y calorías con precisión científica.</p>
+                </div>
+
+                <div class="onboarding-progress">
+                    <div class="progress-dot active" id="dot1"></div>
+                    <div class="progress-dot" id="dot2"></div>
+                    <div class="progress-dot" id="dot3"></div>
+                </div>
+
+                <form action="app.html" method="POST" id="onboardingForm">
+                    <input type="hidden" name="action" value="onboarding">
+
+                    <!-- PASO 1: Datos Fisiológicos -->
+                    <div class="step-container active" id="step1">
+                        <h3 style="margin-bottom: 1.5rem;">Datos Fisiológicos</h3>
+                        
+                        <div class="step-grid">
+                            <div>
+                                <label style="display:block; margin-bottom: 0.5rem; font-weight:700;">GÉNERO BIOLÓGICO</label>
+                                <div class="step-options-grid" style="grid-template-columns: 1fr 1fr;">
+                                    <label class="option-card selected" id="genderMaleCard">
+                                        <input type="radio" name="gender" value="male" checked onclick="selectOption('gender', 'MaleCard')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                        <span class="option-card-title">Masculino</span>
+                                    </label>
+                                    <label class="option-card" id="genderFemaleCard">
+                                        <input type="radio" name="gender" value="female" onclick="selectOption('gender', 'FemaleCard')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-3-3.87"></path><path d="M9 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path><path d="M9 3.13a4 4 0 0 0 0 7.75"></path></svg>
+                                        <span class="option-card-title">Femenino</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                                    <label style="font-weight:700;">EDAD</label>
+                                </div>
+                                <input type="number" name="age" class="form-control" placeholder="Años" min="10" max="100" required style="height: 60px; font-size: 1.2rem;">
+                            </div>
+                        </div>
+
+                        <div class="step-grid" style="margin-top: 2rem;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                                    <label style="font-weight:700;">PESO ACTUAL</label>
+                                    <div class="unit-toggle-group">
+                                        <button type="button" class="unit-btn active" id="unitWeightKg" onclick="setUnit('weight', 'kg')">KG</button>
+                                        <button type="button" class="unit-btn" id="unitWeightLbs" onclick="setUnit('weight', 'lbs')">LBS</button>
+                                    </div>
+                                    <input type="hidden" name="unit_weight" id="unit_weight_input" value="kg">
+                                </div>
+                                <input type="number" step="0.1" name="weight" id="weight_input" class="form-control" placeholder="Valor" required style="height: 60px; font-size: 1.2rem;">
+                            </div>
+
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                                    <label style="font-weight:700;">ESTATURA</label>
+                                    <div class="unit-toggle-group">
+                                        <button type="button" class="unit-btn active" id="unitHeightCm" onclick="setUnit('height', 'cm')">CM</button>
+                                        <button type="button" class="unit-btn" id="unitHeightIn" onclick="setUnit('height', 'in')">IN</button>
+                                    </div>
+                                    <input type="hidden" name="unit_height" id="unit_height_input" value="cm">
+                                </div>
+                                <input type="number" step="0.1" name="height" id="height_input" class="form-control" placeholder="Valor" required style="height: 60px; font-size: 1.2rem;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASO 2: Objetivos de Rendimiento -->
+                    <div class="step-container" id="step2">
+                        <h3 style="margin-bottom: 1.5rem;">Tus Objetivos</h3>
+                        
+                        <label style="display:block; margin-bottom: 0.5rem; font-weight:700;">SELECCIONA TU META</label>
+                        <div class="step-options-grid">
+                            <label class="option-card selected" id="goalPerdidaCard">
+                                <input type="radio" name="goal" value="perdida_peso" checked onclick="selectOption('goal', 'PerdidaCard'); updateActivityTexts();">
+                                <span class="option-card-title">Perder Grasa</span>
+                                <span class="option-card-desc">Reducción de grasa corporal conservando músculo.</span>
+                            </label>
+                            <label class="option-card" id="goalSubidaCard">
+                                <input type="radio" name="goal" value="subida_peso" onclick="selectOption('goal', 'SubidaCard'); updateActivityTexts();">
+                                <span class="option-card-title">Ganar Músculo</span>
+                                <span class="option-card-desc">Ganancia de tejido magro y fuerza.</span>
+                            </label>
+                            <label class="option-card" id="goalDefinicionCard">
+                                <input type="radio" name="goal" value="definicion" onclick="selectOption('goal', 'DefinicionCard'); updateActivityTexts();">
+                                <span class="option-card-title">Definición</span>
+                                <span class="option-card-desc">Focalizado en cortes musculares máximos.</span>
+                            </label>
+                            <label class="option-card" id="goalMantenimientoCard">
+                                <input type="radio" name="goal" value="mantenimiento" onclick="selectOption('goal', 'MantenimientoCard'); updateActivityTexts();">
+                                <span class="option-card-title">Mantenimiento</span>
+                                <span class="option-card-desc">Mantener tu composición corporal actual.</span>
+                            </label>
+                            <label class="option-card" id="goalDeportivoCard">
+                                <input type="radio" name="goal" value="deportivo" onclick="selectOption('goal', 'DeportivoCard'); updateActivityTexts();">
+                                <span class="option-card-title">Deportivo</span>
+                                <span class="option-card-desc">Aumento de energía para atletas de alto rendimiento.</span>
+                            </label>
+                        </div>
+
+                        <div class="step-grid" style="margin-top: 2rem;">
+                            <div>
+                                <label style="display:block; margin-bottom: 0.5rem; font-weight:700;">PESO OBJETIVO</label>
+                                <input type="number" step="0.1" name="target_weight" class="form-control" placeholder="Meta" required style="height: 60px; font-size: 1.2rem;">
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom: 0.5rem; font-weight:700;">GRASA CORPORAL ESTIMADA</label>
+                                <select name="body_fat" class="form-control" style="height: 60px; font-size: 1.1rem; background-color: var(--bg-secondary);">
+                                    <option value="1-4%">1 - 4% (Esencial)</option>
+                                    <option value="5-7%">5 - 7% (Extremo)</option>
+                                    <option value="8-10%">8 - 10% (Definido)</option>
+                                    <option value="11-12%">11 - 12% (Atlético)</option>
+                                    <option value="13-15%" selected>13 - 15% (Saludable)</option>
+                                    <option value="16-19%">16 - 19% (Normal)</option>
+                                    <option value="20-24%">20 - 24% (Moderado)</option>
+                                    <option value="25-30%">25 - 30% (Elevado)</option>
+                                    <option value="35-40%">35 - 40% (Sobrepeso)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASO 3: Nivel de Actividad Física -->
+                    <div class="step-container" id="step3">
+                        <h3 style="margin-bottom: 1.5rem;">Tu Actividad Física</h3>
+                        
+                        <label style="display:block; margin-bottom: 0.5rem; font-weight:700;">NIVEL DE ACTIVIDAD DIARIA</label>
+                        <div class="step-options-grid" style="grid-template-columns: 1fr 1fr;">
+                            <label class="option-card selected" id="activityBajoCard">
+                                <input type="radio" name="activity" value="bajo" checked onclick="selectOption('activity', 'BajoCard')">
+                                <span class="option-card-title" style="color:var(--primary);">Bajo (x1.2)</span>
+                                <span class="option-card-desc" id="actBajoDesc">Trabajo de escritorio, menos de 5,000 pasos al día. No entrena.</span>
+                            </label>
+                            <label class="option-card" id="activityModeradoCard">
+                                <input type="radio" name="activity" value="moderado" onclick="selectOption('activity', 'ModeradoCard')">
+                                <span class="option-card-title" style="color:var(--primary);">Moderado (x1.375)</span>
+                                <span class="option-card-desc" id="actModeradoDesc">3-4 días de caminatas o cardio ligero + actividades comunes.</span>
+                            </label>
+                            <label class="option-card" id="activityAltoCard">
+                                <input type="radio" name="activity" value="alto" onclick="selectOption('activity', 'AltoCard')">
+                                <span class="option-card-title" style="color:var(--primary);">Alto (x1.55)</span>
+                                <span class="option-card-desc" id="actAltoDesc">5+ días de ejercicio (Cardio combinado con circuitos de fuerza).</span>
+                            </label>
+                            <label class="option-card" id="activityMuyAltoCard">
+                                <input type="radio" name="activity" value="muy_alto" onclick="selectOption('activity', 'MuyAltoCard')">
+                                <span class="option-card-title" style="color:var(--primary);">Muy Alto (x1.725)</span>
+                                <span class="option-card-desc" id="actMuyAltoDesc">Atletas, entrenamientos dobles diarios o trabajo físico pesado.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Control de Navegación -->
+                    <div class="onboarding-buttons">
+                        <button type="button" class="btn-secondary" id="btnPrev" onclick="moveStep(-1)" style="visibility: hidden;">Anterior</button>
+                        <button type="button" class="btn-primary" id="btnNext" onclick="moveStep(1)">Siguiente</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>\n<div id="state-dashboard" style="display:none;">
+        <!-- DASHBOARD PRINCIPAL -->
+        <div class="container dashboard-layout">
+            <div class="dashboard-header">
+                <div>
+                    <h2 class="text-gradient" style="font-size: 2.2rem; text-transform: uppercase;"><span id="welcome-username">BIENVENIDO</span></h2>
+                    <p style="color: var(--text-secondary); margin-top: 0.3rem;">Aquí tienes el control de tu nutrición de hoy.</p>
+                </div>
+                <div>
+                    <span style="font-size: 0.95rem; font-weight:700; color: var(--text-muted);">
+                        FECHA: 
+                    </span>
+                </div>
+            </div>
+
+            <!-- Grilla Principal -->
+            <div class="dashboard-grid">
+                <!-- Columna Izquierda: Círculo de Calorías y Macronutrientes -->
+                <div class="panel-card">
+                    <h3>Calorías Diarias</h3>
+
+                    <div class="capped-alert" id="calorie-capped-alert" style="display:none;">
+                        <div class="capped-alert">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top: 2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <span><strong>Límite de seguridad activo:</strong> Tu meta calórica ha sido ajustada al mínimo biológico saludable ( kcal) para prevenir la desnutrición.</span>
+                        </div>
+                    </div>
+
+                    <div class="calorie-circle-container">
+                        <svg class="calorie-svg">
+                            <circle class="calorie-bg-circle" cx="130" cy="130" r="110" />
+                            <circle class="calorie-progress-circle" id="calorieProgress" cx="130" cy="130" r="110" stroke-dasharray="691.15" stroke-dashoffset="691.15" />
+                        </svg>
+                        <div class="calorie-circle-text">
+                            <div class="calorie-val" id="consumedKcal"></div>
+                            <div class="calorie-lbl">Consumidas</div>
+                            <div class="calorie-goal">Meta: <span id="goalKcal"></span> kcal</div>
+                        </div>
+                    </div>
+
+                    <!-- Macronutrientes -->
+                    <div class="macros-grid">
+                        <!-- Proteínas -->
+                        <div class="macro-bar-container">
+                            <div class="macro-bar-header">
+                                <div class="macro-label"><span class="macro-dot prot"></span>Proteína</div>
+                                <div class="macro-text-vals"><span id="currProt"></span> / <span id="goalProt"></span>g</div>
+                            </div>
+                            <div class="macro-bar-track">
+                                <div class="macro-bar-fill prot" id="barProt"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Carbohidratos -->
+                        <div class="macro-bar-container">
+                            <div class="macro-bar-header">
+                                <div class="macro-label"><span class="macro-dot carb"></span>Carbohidratos</div>
+                                <div class="macro-text-vals"><span id="currCarb"></span> / <span id="goalCarb"></span>g</div>
+                            </div>
+                            <div class="macro-bar-track">
+                                <div class="macro-bar-fill carb" id="barCarb"></div>
+                            </div>
+                        </div>
+
+                        <!-- Grasas -->
+                        <div class="macro-bar-container">
+                            <div class="macro-bar-header">
+                                <div class="macro-label"><span class="macro-dot fat"></span>Grasas</div>
+                                <div class="macro-text-vals"><span id="currFat"></span> / <span id="goalFat"></span>g</div>
+                            </div>
+                            <div class="macro-bar-track">
+                                <div class="macro-bar-fill fat" id="barFat"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="timeline-card">
+                        <div class="timeline-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </div>
+                        <div class="timeline-text">
+                            <h4>Línea de Tiempo</h4>
+                            <p id="timelineMessage"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Seguimiento de Peso e Historial -->
+                <div class="panel-card">
+                    <h3>Seguimiento Físico</h3>
+                    
+                    <div class="weight-tracker-wrapper">
+                        <!-- Input de Peso -->
+                        <div class="weight-input-box">
+                            <div>
+                                <h4 style="font-size: 1.05rem; margin-bottom: 0.2rem;">Actualizar Peso Semanal</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Las calorías diarias se reajustarán automáticamente al variar tu peso.</p>
+                            </div>
+                            <form class="weight-input-form" onsubmit="updateWeight(event)">
+                                <input type="number" step="0.1" id="newWeightVal" class="form-control" placeholder="kg" id="newWeightVal" required>
+                                <button type="submit" class="btn-primary" style="padding: 0.8rem 1.2rem; font-size: 0.95rem;">Log</button>
+                            </form>
+                        </div>
+
+                        <!-- Gráfico SVG -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: -1rem;">
+                            <h4 style="font-size: 1rem; color: var(--text-secondary);"><span id="evolution-weight-title">Evolución de Peso</span></h4>
+                        </div>
+                        <div class="weight-chart-container">
+                            <svg class="weight-chart-svg" id="weightChartSvg" viewBox="0 0 500 200">
+                                <!-- Las líneas del gráfico serán cargadas por Javascript dinámicamente -->
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Actividades de GETD -->
+            <div class="activity-table-wrapper">
+                <h3>Tasa de Actividad Física Diaria (GETD)</h3>
+                <div class="activity-table-container">
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>Nivel de Actividad</th>
+                                <th>Si el objetivo es: Perder Peso</th>
+                                <th>Si el objetivo es: Ganar Músculo</th>
+                                <th>Multiplicador (GETD)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="rowActBajo" >
+                                <td>Bajo <span class="activity-badge">x1.2</span></td>
+                                <td>Trabajo de escritorio, menos de 5,000 pasos al día. No entrena.</td>
+                                <td>Trabajo de escritorio, sin estímulo de fuerza actual.</td>
+                                <td>x 1.2</td>
+                            </tr>
+                            <tr id="rowActModerado" >
+                                <td>Moderado <span class="activity-badge">x1.375</span></td>
+                                <td>3-4 días de caminatas o cardio ligero + actividades diarias comunes.</td>
+                                <td>3 días de entrenamiento de fuerza enfocado (Rutina de cuerpo completo).</td>
+                                <td>x 1.375</td>
+                            </tr>
+                            <tr id="rowActAlto" >
+                                <td>Alto <span class="activity-badge">x1.55</span></td>
+                                <td>5+ días de ejercicio (Cardio combinado con circuitos de fuerza).</td>
+                                <td>4-5 días de entrenamiento de fuerza intenso (Rutinas divididas por músculos).</td>
+                                <td>x 1.55</td>
+                            </tr>
+                            <tr id="rowActMuyAlto" >
+                                <td>Muy Alto <span class="activity-badge">x1.725</span></td>
+                                <td>Atletas, entrenamientos dobles diarios o trabajo físico muy pesado.</td>
+                                <td>Atletas de fuerza o culturistas en fases de volumen de alta demanda.</td>
+                                <td>x 1.725</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECCIONES DE COMIDAS (Desayuno, Almuerzo, Merienda, Agregar Comidas) -->
+            <div class="meals-section-header">
+                <h3 style="font-size: 1.6rem; border: none; padding: 0;">Distribución de Comidas</h3>
+            </div>
+            
+            <div class="meals-grid">
+                <!-- Desayuno -->
+                <div class="meal-card" id="cardDesayuno">
+                    <div class="meal-card-header">
+                        <div class="meal-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            Desayuno
+                        </div>
+                        <div class="meal-total-kcal"><span id="kcalValDesayuno">0</span> kcal</div>
+                    </div>
+                    <ul class="meal-food-list" id="listDesayuno">
+                        <!-- Cargados dinámicamente -->
+                    </ul>
+                    <button class="btn-add-food-trigger" onclick="openAddFoodModal('desayuno')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Agregar alimento
+                    </button>
+                </div>
+
+                <!-- Almuerzo -->
+                <div class="meal-card" id="cardAlmuerzo">
+                    <div class="meal-card-header">
+                        <div class="meal-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            Almuerzo
+                        </div>
+                        <div class="meal-total-kcal"><span id="kcalValAlmuerzo">0</span> kcal</div>
+                    </div>
+                    <ul class="meal-food-list" id="listAlmuerzo">
+                        <!-- Cargados dinámicamente -->
+                    </ul>
+                    <button class="btn-add-food-trigger" onclick="openAddFoodModal('almuerzo')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Agregar alimento
+                    </button>
+                </div>
+
+                <!-- Merienda -->
+                <div class="meal-card" id="cardMerienda">
+                    <div class="meal-card-header">
+                        <div class="meal-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            Merienda
+                        </div>
+                        <div class="meal-total-kcal"><span id="kcalValMerienda">0</span> kcal</div>
+                    </div>
+                    <ul class="meal-food-list" id="listMerienda">
+                        <!-- Cargados dinámicamente -->
+                    </ul>
+                    <button class="btn-add-food-trigger" onclick="openAddFoodModal('merienda')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Agregar alimento
+                    </button>
+                </div>
+
+                <!-- Agregar Comidas (Comodín) -->
+                <div class="meal-card" id="cardAgregarComidas">
+                    <div class="meal-card-header">
+                        <div class="meal-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            Agregar Comidas
+                        </div>
+                        <div class="meal-total-kcal"><span id="kcalValAgregarComidas">0</span> kcal</div>
+                    </div>
+                    <ul class="meal-food-list" id="listAgregarComidas">
+                        <!-- Cargados dinámicamente -->
+                    </ul>
+                    <button class="btn-add-food-trigger" onclick="openAddFoodModal('agregar_comidas')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Agregar alimento
+                    </button>
+                </div>
+            </div>
+
+            <!-- Disclaimer legal en el Dashboard -->
+            <div class="legal-disclaimer">
+                <strong>Aviso Legal (Disclaimer):</strong> Los cálculos calóricos y macronutrientes recomendados en esta aplicación web son solo una guía informativa basada en fórmulas estándar del sector deportivo. Esta información no reemplaza el consejo médico ni la guía personalizada de un nutricionista titulado. Realice cambios en su dieta y entrenamiento bajo su propio riesgo y supervisión.
+            </div>
+        </div>
+
+        <!-- MODAL AGREGAR COMIDA -->
+        <div class="modal" id="addFoodModal">
+            <div class="modal-backdrop" onclick="closeAddFoodModal()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitleText" style="margin-bottom:0;">Agregar Alimento</h3>
+                    <button class="btn-modal-close" onclick="closeAddFoodModal()">&times;</button>
+                </div>
+                <form id="addFoodForm" onsubmit="submitFood(event)">
+                    <input type="hidden" name="section" id="modalSectionInput">
+                    
+                    <!-- Campo de búsqueda -->
+                    <div class="form-group" style="position: relative;">
+                        <label for="food_search">Buscar Alimento (API FatSecret)</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="food_search" class="form-control" placeholder="Escribe el alimento, ej: Plátano, Pollo..." oninput="debouncedSearchFoodAPI()">
+                            <button type="button" class="btn-primary" onclick="searchFoodAPI()" style="padding: 0 1.2rem; font-size: 0.9rem;">Buscar</button>
+                        </div>
+                        <!-- Dropdown de resultados de búsqueda -->
+                        <div id="food_search_results" class="search-results-dropdown" style="display: none;"></div>
+                    </div>
+
+                    <!-- Detalle del alimento seleccionado (oculto por defecto) -->
+                    <div id="selected_food_detail" style="display: none; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+                        <h4 id="selected_food_name" style="color: white; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Nombre del Alimento</h4>
+                        <p id="selected_food_base_desc" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Detalles base</p>
+                        
+                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+                            <div class="form-group" style="margin: 0; flex: 1;">
+                                <label for="food_quantity" id="quantity_label">Cantidad a consumir (g)</label>
+                                <input type="number" step="1" id="food_quantity" class="form-control" value="100" oninput="recalculateSelectedMacros()">
+                            </div>
+                        </div>
+
+                        <!-- Campos ocultos para enviar los valores calculados -->
+                        <input type="hidden" id="food_name" name="name">
+                        <input type="hidden" id="food_carbs" name="carbs">
+                        <input type="hidden" id="food_proteins" name="proteins">
+                        <input type="hidden" id="food_fats" name="fats">
+
+                        <div style="background: rgba(0,0,0,0.3); border:1px solid var(--border); padding: 1rem; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <span style="font-size:0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Macros de la Porción:</span>
+                                <span style="font-size:0.85rem; color: var(--text-secondary); font-weight: 700;" id="modalMacrosCalc">P: 0g | C: 0g | G: 0g</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size:0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Calorías Totales:</span>
+                                <span style="font-size:1.2rem; font-weight:800; color:var(--primary);" id="modalCalorieCalc">0 kcal</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="closeAddFoodModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar Alimento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Transferir datos de PHP a JS para el cargado dinámico -->
+        <script>
+            
+        </script>
+    </div>
+
+    <!-- Footer -->
+    <footer style="margin-top: 5rem;">
+        <div class="container">
+            <p>&copy; 2026 Entrena Con Max. Todos los derechos reservados. Diseñado para optimizar tu rendimiento.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+</html>
