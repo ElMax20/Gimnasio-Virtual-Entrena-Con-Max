@@ -401,8 +401,7 @@
                 // Intercept Login Form
                 const loginForm = document.getElementById('loginForm');
                 if (loginForm) {
-                    loginForm.onsubmit = function(e) {
-                        e.preventDefault();
+                    const handleLogin = () => {
                         const formData = new FormData(loginForm);
                         const username = formData.get('username').trim().toLowerCase();
                         const password = formData.get('password');
@@ -432,13 +431,23 @@
 
                         setTimeout(() => { window.location.href = 'app.html'; }, 1000);
                     };
+
+                    loginForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        handleLogin();
+                    };
+                    loginForm.submit = function() {
+                        handleLogin();
+                    };
+                    loginForm.requestSubmit = function() {
+                        handleLogin();
+                    };
                 }
 
                 // Intercept Register Form
                 const registerForm = document.getElementById('registerForm');
                 if (registerForm) {
-                    registerForm.onsubmit = function(e) {
-                        e.preventDefault();
+                    const handleRegister = () => {
                         const formData = new FormData(registerForm);
                         const username = formData.get('username').trim().toLowerCase();
                         const email = formData.get('email').trim().toLowerCase();
@@ -491,6 +500,17 @@
                             }
                         }, 1500);
                     };
+
+                    registerForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        handleRegister();
+                    };
+                    registerForm.submit = function() {
+                        handleRegister();
+                    };
+                    registerForm.requestSubmit = function() {
+                        handleRegister();
+                    };
                 }
             } else if (path.endsWith('routines.html') || path.endsWith('config.html')) {
                 // Redirect unauthorized page views
@@ -537,8 +557,7 @@
                 const obForm = document.getElementById('onboardingForm');
                 if (obForm) {
                     obForm.action = '#';
-                    obForm.onsubmit = function(e) {
-                        e.preventDefault();
+                    const handleOnboardingSubmit = () => {
                         const formData = new FormData(obForm);
                         const weight = parseFloat(formData.get('weight'));
                         const height = parseFloat(formData.get('height'));
@@ -598,6 +617,17 @@
                         saveWeightHistory(currentUsername, initialWeightLog);
 
                         window.location.reload();
+                    };
+
+                    obForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        handleOnboardingSubmit();
+                    };
+                    obForm.submit = function() {
+                        handleOnboardingSubmit();
+                    };
+                    obForm.requestSubmit = function() {
+                        handleOnboardingSubmit();
                     };
                 }
             } else {
