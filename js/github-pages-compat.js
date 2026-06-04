@@ -388,6 +388,101 @@
                 if (dashEl) dashEl.style.display = 'none';
                 const onEl = document.getElementById('state-onboarding');
                 if (onEl) onEl.style.display = 'none';
+
+                // Intercept Login Form
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        const formData = new FormData(loginForm);
+                        const username = formData.get('username').trim().toLowerCase();
+                        const password = formData.get('password');
+
+                        // Remove existing alerts
+                        const alerts = loginForm.parentElement.querySelectorAll('.auth-alert');
+                        alerts.forEach(al => al.remove());
+
+                        const users = getUsers();
+                        const user = users[username];
+
+                        if (!user || user.password !== password) {
+                            const errDiv = document.createElement('div');
+                            errDiv.className = 'auth-alert error';
+                            errDiv.innerText = 'Usuario o contraseña incorrectos';
+                            loginForm.insertBefore(errDiv, loginForm.firstChild);
+                            return;
+                        }
+
+                        localStorage.setItem('logged_in_user', username);
+                        localStorage.setItem('user_avatar', user.avatar || '');
+                        
+                        const successDiv = document.createElement('div');
+                        successDiv.className = 'auth-alert success';
+                        successDiv.innerText = 'Sesión iniciada con éxito. Redirigiendo...';
+                        loginForm.insertBefore(successDiv, loginForm.firstChild);
+
+                        setTimeout(() => { window.location.href = 'app.html'; }, 1000);
+                    };
+                }
+
+                // Intercept Register Form
+                const registerForm = document.getElementById('registerForm');
+                if (registerForm) {
+                    registerForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        const formData = new FormData(registerForm);
+                        const username = formData.get('username').trim().toLowerCase();
+                        const email = formData.get('email').trim().toLowerCase();
+                        const password = formData.get('password');
+
+                        // Remove existing alerts
+                        const alerts = registerForm.parentElement.querySelectorAll('.auth-alert');
+                        alerts.forEach(al => al.remove());
+
+                        if (!username || !email || !password) {
+                            const errDiv = document.createElement('div');
+                            errDiv.className = 'auth-alert error';
+                            errDiv.innerText = 'Todos los campos son requeridos';
+                            registerForm.insertBefore(errDiv, registerForm.firstChild);
+                            return;
+                        }
+
+                        const users = getUsers();
+                        if (users[username]) {
+                            const errDiv = document.createElement('div');
+                            errDiv.className = 'auth-alert error';
+                            errDiv.innerText = 'El usuario ya existe';
+                            registerForm.insertBefore(errDiv, registerForm.firstChild);
+                            return;
+                        }
+
+                        users[username] = { email, password, avatar: '' };
+                        saveUsers(users);
+
+                        const successDiv = document.createElement('div');
+                        successDiv.className = 'auth-alert success';
+                        successDiv.innerText = 'Registro completado con éxito. Ahora inicia sesión.';
+                        registerForm.insertBefore(successDiv, registerForm.firstChild);
+
+                        setTimeout(() => {
+                            if (typeof switchAuthTab === 'function') {
+                                switchAuthTab('login');
+                            } else {
+                                const lForm = document.getElementById('loginForm');
+                                const rForm = document.getElementById('registerForm');
+                                const tabs = document.querySelectorAll('.auth-tab');
+                                if (lForm && rForm) {
+                                    lForm.classList.add('active');
+                                    rForm.classList.remove('active');
+                                    if (tabs.length >= 2) {
+                                        tabs[0].classList.add('active');
+                                        tabs[1].classList.remove('active');
+                                    }
+                                }
+                            }
+                        }, 1500);
+                    };
+                }
             } else if (path.endsWith('routines.html') || path.endsWith('config.html')) {
                 // Redirect unauthorized page views
                 window.location.href = 'app.html';
