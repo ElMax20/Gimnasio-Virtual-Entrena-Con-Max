@@ -370,6 +370,15 @@
 
     // Client-side execution bootstrap
     window.addEventListener('DOMContentLoaded', () => {
+        // Intercept client-side URL action=logout
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'logout') {
+            localStorage.removeItem('logged_in_user');
+            localStorage.removeItem('user_avatar');
+            window.location.href = 'app.html';
+            return;
+        }
+
         // Initialize Default Demo Users and Profile if empty
         const users = getUsers();
         if (Object.keys(users).length === 0) {
