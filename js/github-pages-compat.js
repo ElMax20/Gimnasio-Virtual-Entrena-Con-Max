@@ -1061,7 +1061,7 @@
             if (emailEl && uRec) emailEl.value = uRec.email;
 
             // Handle static file upload
-            const fileInput = document.getElementById('avatar');
+            const fileInput = document.getElementById('avatarInput') || document.getElementById('avatar');
             if (fileInput) {
                 fileInput.addEventListener('change', function(e) {
                     const file = fileInput.files[0];
@@ -1082,7 +1082,7 @@
                     e.preventDefault();
                     const newUname = unameEl.value.trim().toLowerCase();
                     const newEmail = emailEl.value.trim().toLowerCase();
-                    const avatarFile = fileInput.files[0];
+                    const avatarFile = fileInput ? fileInput.files[0] : null;
 
                     const users = getUsers();
                     const prevData = users[currentUsername];
