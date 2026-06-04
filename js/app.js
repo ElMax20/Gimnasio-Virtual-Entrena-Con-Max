@@ -203,7 +203,12 @@ function moveStep(dir) {
     if (!nextStepEl) {
         // Si no hay siguiente paso, enviar el formulario
         if (dir === 1) {
-            document.getElementById('onboardingForm').submit();
+            const onboardingForm = document.getElementById('onboardingForm');
+            if (typeof onboardingForm.requestSubmit === 'function') {
+                onboardingForm.requestSubmit();
+            } else {
+                onboardingForm.submit();
+            }
         }
         return;
     }
