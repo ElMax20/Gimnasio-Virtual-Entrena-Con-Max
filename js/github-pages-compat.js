@@ -525,7 +525,7 @@
                 if (dashEl) dashEl.style.display = 'none';
                 
                 // Override Onboarding form submit
-                const obForm = document.querySelector('form[action="app.php"]');
+                const obForm = document.getElementById('onboardingForm');
                 if (obForm) {
                     obForm.action = '#';
                     obForm.onsubmit = function(e) {
