@@ -31,13 +31,16 @@
 
             <ul class="nav-links" id="navLinks">
                 <li><a href="index.html">Inicio</a></li>
-                <li><a href="app.html">Calorías</a></li>
-                <li><a href="routines.html">Rutinas</a></li>
-                <li><a href="config.html" class="active">Configuración</a></li>
-                <li>
+                <li class="nav-auth-only" style="display: none;"><a href="app.html">Calorías</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="routines.html">Rutinas</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="config.html" class="active">Configuración</a></li>
+                <li id="nav-user-item" style="display: none;">
                     <a href="config.html" class="nav-avatar-container" title="Configuración de Perfil">
                         <img src="" class="nav-avatar" id="nav-user-avatar" alt="Avatar">
                     </a>
+                </li>
+                <li id="nav-login-item">
+                    <a href="app.html" class="btn-header">Iniciar Sesión</a>
                 </li>
             </ul>
         </div>

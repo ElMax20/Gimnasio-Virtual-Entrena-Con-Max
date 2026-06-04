@@ -105,10 +105,31 @@
     }
 
     function getMeals(username) {
-        return JSON.parse(localStorage.getItem('meals_' + username) || '[]');
+        return JSON.parse(localStorage.getItem('meals_' + username) || '{}');
     }
     function saveMeals(username, meals) {
         localStorage.setItem('meals_' + username, JSON.stringify(meals));
+    }
+    function getMealsForDate(username, dateStr) {
+        const allMeals = getMeals(username);
+        if (!allMeals[dateStr]) {
+            allMeals[dateStr] = {
+                desayuno: [],
+                almuerzo: [],
+                merienda: [],
+                agregar_comidas: []
+            };
+        }
+        return allMeals[dateStr];
+    }
+    function saveMealsForDate(username, dateStr, dayMeals) {
+        const allMeals = getMeals(username);
+        allMeals[dateStr] = dayMeals;
+        saveMeals(username, allMeals);
+    }
+    function getLocalDateString() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     function getWeightHistory(username) {
@@ -123,6 +144,193 @@
     }
     function saveWorkoutLogs(username, logs) {
         localStorage.setItem('workout_logs_' + username, JSON.stringify(logs));
+    }
+
+    // --- FatSecret API Helpers ---
+    function extractFoods(data) {
+        if (!data) return [];
+        if (Array.isArray(data)) return data;
+        if (data.foods && Array.isArray(data.foods.food)) return data.foods.food;
+        if (data.foods && typeof data.foods.food === 'object') return [data.foods.food];
+        if (data.foods_search && data.foods_search.results && Array.isArray(data.foods_search.results.food)) {
+            return data.foods_search.results.food;
+        }
+        if (data.foods_search && data.foods_search.results && typeof data.foods_search.results.food === 'object') {
+            return [data.foods_search.results.food];
+        }
+        return [];
+    }
+
+    async function getFatSecretToken() {
+        const cachedToken = localStorage.getItem('fatsecret_token');
+        const expiresAt = localStorage.getItem('fatsecret_expires_at');
+        
+        if (cachedToken && expiresAt && parseInt(expiresAt) > Date.now()) {
+            return cachedToken;
+        }
+        
+        const clientId = '856d7ec06200498f9b5679923ddab29d';
+        const clientSecret = 'dee3aa9884a5458dad637464f0d2c8ad';
+        const tokenUrl = 'https://oauth.fatsecret.com/connect/token';
+        const bodyParams = new URLSearchParams({
+            'grant_type': 'client_credentials',
+            'scope': 'basic'
+        });
+
+        let response = null;
+        try {
+            // Direct request
+            response = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+                },
+                body: bodyParams
+            });
+        } catch (directErr) {
+            console.warn("Direct token fetch failed (likely CORS). Trying AllOrigins proxy...", directErr);
+            try {
+                // AllOrigins proxy
+                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(tokenUrl);
+                response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+                    },
+                    body: bodyParams
+                });
+            } catch (proxyErr) {
+                console.warn("AllOrigins proxy token fetch failed. Trying corsproxy.io proxy...", proxyErr);
+                try {
+                    // corsproxy.io proxy
+                    const proxyUrl2 = 'https://corsproxy.io/?' + encodeURIComponent(tokenUrl);
+                    response = await fetch(proxyUrl2, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+                        },
+                        body: bodyParams
+                    });
+                } catch (proxy2Err) {
+                    console.warn("Proxy token retrieval failed. Reading fatsecret_token.txt fallback...", proxy2Err);
+                    try {
+                        const fileRes = await fetch('fatsecret_token.txt');
+                        if (fileRes.ok) {
+                            const fileData = await fileRes.json();
+                            if (fileData.access_token) {
+                                localStorage.setItem('fatsecret_token', fileData.access_token);
+                                const exp = Date.now() + (parseInt(fileData.expires_in || 3600) * 1000) - 60000;
+                                localStorage.setItem('fatsecret_expires_at', exp.toString());
+                                return fileData.access_token;
+                            }
+                        }
+                    } catch (fileErr) {
+                        console.error("Local token file fallback also failed:", fileErr);
+                    }
+                    return null;
+                }
+            }
+        }
+
+        if (response && response.ok) {
+            const data = await response.json();
+            if (data.access_token) {
+                localStorage.setItem('fatsecret_token', data.access_token);
+                const expiresTime = Date.now() + (parseInt(data.expires_in || 3600) * 1000) - 60000;
+                localStorage.setItem('fatsecret_expires_at', expiresTime.toString());
+                return data.access_token;
+            }
+        }
+        return null;
+    }
+
+    async function searchFatSecretFood(query) {
+        if (!query || query.trim().length < 2) {
+            return [];
+        }
+        
+        const q = query.trim().toLowerCase();
+        
+        const getMockMatches = () => {
+            return MOCK_FOODS.filter(f => f.name.includes(q)).map((f, i) => ({
+                food_id: 'mock_' + i + '_' + Date.now(),
+                food_name: f.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+                food_description: `Per 100g - Calories: ${f.calories}kcal | Fat: ${f.fats.toFixed(2)}g | Carbs: ${f.carbs.toFixed(2)}g | Protein: ${f.proteins.toFixed(2)}g`
+            }));
+        };
+
+        try {
+            const token = await getFatSecretToken();
+            if (!token) {
+                console.warn("No FatSecret token. Falling back to local mock search.");
+                return getMockMatches();
+            }
+
+            const apiUrl = 'https://platform.fatsecret.com/rest/server.api?method=foods.search&search_expression=' + encodeURIComponent(q) + '&format=json&max_results=10';
+            
+            let data = null;
+            try {
+                // Try direct first
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (response.ok) {
+                    data = await response.json();
+                } else {
+                    throw new Error("Direct search failed: " + response.statusText);
+                }
+            } catch (directErr) {
+                console.warn("Direct search failed. Trying AllOrigins proxy...", directErr);
+                try {
+                    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
+                    const response = await fetch(proxyUrl, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (response.ok) {
+                        data = await response.json();
+                    } else {
+                        throw new Error("AllOrigins proxy search failed");
+                    }
+                } catch (proxyErr) {
+                    console.warn("AllOrigins search failed. Trying corsproxy.io...", proxyErr);
+                    try {
+                        const proxyUrl2 = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
+                        const response2 = await fetch(proxyUrl2, {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        if (response2.ok) {
+                            data = await response2.json();
+                        } else {
+                            throw new Error("corsproxy.io failed");
+                        }
+                    } catch (proxy2Err) {
+                        console.error("All search requests failed:", proxy2Err);
+                        return getMockMatches();
+                    }
+                }
+            }
+
+            const foods = extractFoods(data);
+            if (foods && foods.length > 0) {
+                return foods.map(f => ({
+                    food_id: f.food_id || String(Math.random()),
+                    food_name: f.food_name,
+                    food_description: f.food_description || `Per 100g - Calories: 0kcal | Fat: 0.00g | Carbs: 0.00g | Protein: 0.00g`
+                }));
+            } else {
+                console.warn("FatSecret API returned no results. Using local mock fallback.");
+                return getMockMatches();
+            }
+        } catch (err) {
+            console.error("FatSecret API error. Using local mock fallback.", err);
+            return getMockMatches();
+        }
     }
 
     // Intercept Fetch requests
@@ -211,39 +419,127 @@
                 }
 
                 if (ajax === 'add_food') {
-                    const meals = getMeals(currentUsername);
+                    const todayStr = getLocalDateString();
+                    const allMeals = getMeals(currentUsername);
+                    const section = bodyData.section;
+                    
+                    const carbs = parseFloat(bodyData.carbs) || 0;
+                    const proteins = parseFloat(bodyData.proteins) || 0;
+                    const fats = parseFloat(bodyData.fats) || 0;
+                    const kcal = Math.round((proteins * 4) + (carbs * 4) + (fats * 9));
+                    
                     const newFood = {
-                        id: Date.now(),
-                        food_name: bodyData.food_name,
-                        calories: parseFloat(bodyData.calories) || 0,
-                        proteins: parseFloat(bodyData.proteins) || 0,
-                        carbs: parseFloat(bodyData.carbs) || 0,
-                        fats: parseFloat(bodyData.fats) || 0,
-                        grams: parseFloat(bodyData.grams) || 100,
-                        created_at: new Date().toISOString()
+                        id: String(Date.now()),
+                        name: bodyData.name,
+                        carbs: carbs,
+                        proteins: proteins,
+                        fats: fats,
+                        kcal: kcal
                     };
-                    meals.push(newFood);
-                    saveMeals(currentUsername, meals);
-                    return Promise.resolve(new Response(JSON.stringify({ success: true, meal: newFood })));
+                    
+                    if (!allMeals[todayStr]) {
+                        allMeals[todayStr] = {
+                            desayuno: [],
+                            almuerzo: [],
+                            merienda: [],
+                            agregar_comidas: []
+                        };
+                    }
+                    if (!allMeals[todayStr][section]) {
+                        allMeals[todayStr][section] = [];
+                    }
+                    allMeals[todayStr][section].push(newFood);
+                    saveMeals(currentUsername, allMeals);
+                    
+                    return Promise.resolve(new Response(JSON.stringify({ success: true, food: newFood })));
                 }
 
                 if (ajax === 'delete_food') {
-                    let meals = getMeals(currentUsername);
-                    const foodId = parseInt(bodyData.id);
-                    meals = meals.filter(m => m.id !== foodId);
-                    saveMeals(currentUsername, meals);
+                    const todayStr = getLocalDateString();
+                    const allMeals = getMeals(currentUsername);
+                    const section = bodyData.section;
+                    const foodId = bodyData.id;
+                    
+                    if (allMeals[todayStr] && allMeals[todayStr][section]) {
+                        allMeals[todayStr][section] = allMeals[todayStr][section].filter(m => String(m.id) !== String(foodId));
+                    }
+                    
+                    saveMeals(currentUsername, allMeals);
                     return Promise.resolve(new Response(JSON.stringify({ success: true })));
                 }
 
-                if (ajax === 'add_weight') {
-                    const history = getWeightHistory(currentUsername);
-                    const newWeight = {
-                        weight: parseFloat(bodyData.weight),
-                        date: new Date().toISOString().split('T')[0]
+                if (ajax === 'update_weight') {
+                    const weightVal = parseFloat(bodyData.weight);
+                    if (!weightVal || isNaN(weightVal)) {
+                        return Promise.resolve(new Response(JSON.stringify({ success: false, error: "Peso inválido" })));
+                    }
+                    
+                    const profile = getProfile(currentUsername);
+                    if (!profile) {
+                        return Promise.resolve(new Response(JSON.stringify({ success: false, error: "Perfil no encontrado" })));
+                    }
+
+                    // Recalcular perfil
+                    profile.weight = weightVal;
+                    
+                    const weight_kg = (profile.unit_weight === 'lbs') ? (weightVal * 0.453592) : weightVal;
+                    const height_cm = (profile.unit_height === 'in') ? (profile.height * 2.54) : profile.height;
+
+                    let tmb = (profile.gender === 'male') 
+                        ? (10 * weight_kg) + (6.25 * height_cm) - (5 * profile.age) + 5
+                        : (10 * weight_kg) + (6.25 * height_cm) - (5 * profile.age) - 161;
+
+                    const multipliers = { bajo: 1.2, moderado: 1.375, alto: 1.55, muy_alto: 1.725 };
+                    const mult = multipliers[profile.activity] || 1.2;
+                    const getd = tmb * mult;
+
+                    let target_calories = getd;
+                    if (profile.goal === 'perdida_peso' || profile.goal === 'definicion') {
+                        target_calories = getd - 400;
+                    } else if (profile.goal === 'subida_peso' || profile.goal === 'deportivo') {
+                        target_calories = getd + 400;
+                    }
+
+                    let is_capped = false;
+                    if (profile.gender === 'female' && target_calories < 1200) {
+                        target_calories = 1200;
+                        is_capped = true;
+                    } else if (profile.gender === 'male' && target_calories < 1500) {
+                        target_calories = 1500;
+                        is_capped = true;
+                    }
+
+                    const protein_g = 1.8 * weight_kg;
+                    const protein_kcal = protein_g * 4;
+                    const fat_kcal = target_calories * 0.25;
+                    const fat_g = fat_kcal / 9;
+                    const carb_kcal = Math.max(0, target_calories - protein_kcal - fat_kcal);
+                    const carb_g = carb_kcal / 4;
+
+                    profile.tmb = Math.round(tmb);
+                    profile.getd = Math.round(getd);
+                    profile.target_calories = Math.round(target_calories);
+                    profile.is_capped = is_capped;
+                    profile.macros = {
+                        protein_g: Math.round(protein_g * 10) / 10,
+                        fat_g: Math.round(fat_g * 10) / 10,
+                        carb_g: Math.round(carb_g * 10) / 10
                     };
-                    history.push(newWeight);
+
+                    saveProfile(currentUsername, profile);
+
+                    const history = getWeightHistory(currentUsername);
+                    history.push({
+                        weight: weightVal,
+                        date: getLocalDateString()
+                    });
                     saveWeightHistory(currentUsername, history);
-                    return Promise.resolve(new Response(JSON.stringify({ success: true, weight: newWeight.weight, date: newWeight.date })));
+
+                    return Promise.resolve(new Response(JSON.stringify({
+                        success: true,
+                        weight_history: history,
+                        profile: profile
+                    })));
                 }
             }
 
@@ -257,9 +553,21 @@
             }
 
             if (ajax === 'search_food') {
-                const query = getQueryParam('q', urlStr).toLowerCase();
-                const matches = MOCK_FOODS.filter(f => f.name.includes(query));
-                return Promise.resolve(new Response(JSON.stringify(matches)));
+                const query = getQueryParam('q', urlStr);
+                return searchFatSecretFood(query)
+                    .then(foods => {
+                        return new Response(JSON.stringify({
+                            success: true,
+                            foods: foods
+                        }));
+                    })
+                    .catch(err => {
+                        console.error("FatSecret API search error:", err);
+                        return new Response(JSON.stringify({
+                            success: false,
+                            error: err.message || "Error al buscar alimento"
+                        }));
+                    });
             }
         }
 
@@ -387,6 +695,10 @@
         }
 
         if (!currentUsername) {
+            // Toggle navbar links
+            document.querySelectorAll('.nav-auth-only').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.nav-guest-only').forEach(el => el.style.display = 'block');
+
             // Unauthenticated view
             const path = window.location.pathname;
             if (path.endsWith('app.html')) {
@@ -522,6 +834,10 @@
         // Authenticated view
         const profile = getProfile(currentUsername);
         const path = window.location.pathname;
+
+        // Toggle navbar links
+        document.querySelectorAll('.nav-auth-only').forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.nav-guest-only').forEach(el => el.style.display = 'none');
 
         // Set Navigation Bar avatar and elements
         const navAvatar = document.getElementById('nav-user-avatar');
@@ -674,17 +990,30 @@
                 });
 
                 // Compute consumed macros for today
-                const meals = getMeals(currentUsername);
+                const todayStr = getLocalDateString();
+                const allMeals = getMeals(currentUsername);
+                if (!allMeals[todayStr]) {
+                    allMeals[todayStr] = {
+                        desayuno: [],
+                        almuerzo: [],
+                        merienda: [],
+                        agregar_comidas: []
+                    };
+                }
+                const mealsToday = allMeals[todayStr];
+
                 let today_kcal = 0;
                 let today_proteins = 0;
                 let today_carbs = 0;
                 let today_fats = 0;
 
-                meals.forEach(m => {
-                    today_kcal += m.calories;
-                    today_proteins += m.proteins;
-                    today_carbs += m.carbs;
-                    today_fats += m.fats;
+                Object.keys(mealsToday).forEach(sec => {
+                    mealsToday[sec].forEach(m => {
+                        today_kcal += m.kcal || 0;
+                        today_proteins += m.proteins || 0;
+                        today_carbs += m.carbs || 0;
+                        today_fats += m.fats || 0;
+                    });
                 });
 
                 document.getElementById('consumedKcal').innerText = Math.round(today_kcal);
@@ -706,7 +1035,7 @@
                 if (timeEl) timeEl.innerText = timelineMsg;
 
                 // Expose global variables before app.js init
-                window.userDataMeals = meals;
+                window.userDataMeals = mealsToday;
                 window.userWeightHistory = getWeightHistory(currentUsername);
                 window.userUnitWeight = profile.unit_weight;
             }
