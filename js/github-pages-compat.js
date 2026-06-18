@@ -914,7 +914,7 @@
     };
 
     // Client-side execution bootstrap
-    window.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
         // Define global showAuthForm
         window.showAuthForm = function(formId) {
             const loginForm = document.getElementById('loginForm');
