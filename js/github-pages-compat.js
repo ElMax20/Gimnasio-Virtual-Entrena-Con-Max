@@ -442,6 +442,19 @@
                                     return new Response(JSON.stringify({ success: false, error: "Error al crear perfil de usuario: " + profileErr.message }));
                                 }
 
+                                // If email confirmation is disabled in Supabase panel, session is populated immediately
+                                if (signUpData.session) {
+                                    localStorage.setItem('logged_in_user', username);
+                                    localStorage.setItem('logged_in_user_id', signUpData.user.id);
+                                    localStorage.setItem('logged_in_user_email', email);
+
+                                    return new Response(JSON.stringify({
+                                        success: true,
+                                        message: "¡Registro exitoso! Iniciando sesión...",
+                                        autoLogin: true
+                                    }));
+                                }
+
                                 return new Response(JSON.stringify({ 
                                     success: true, 
                                     message: "Se ha enviado un correo electrónico de confirmación a " + email + ". Por favor, confirma tu cuenta para poder iniciar sesión." 
@@ -460,6 +473,70 @@
                         saveUsers(users);
                         
                         return Promise.resolve(new Response(JSON.stringify({ success: true, message: "Registro completado con éxito. Ahora inicia sesión." })));
+                    }
+                }
+
+                if (activeAction === 'forgot_password') {
+                    const email = bodyData.email.trim().toLowerCase();
+                    if (!email) {
+                        return Promise.resolve(new Response(JSON.stringify({ success: false, error: "El correo es requerido" })));
+                    }
+
+                    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                        return (async () => {
+                            try {
+                                const redirectUrl = window.location.origin + window.location.pathname;
+                                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                                    redirectTo: redirectUrl
+                                });
+                                if (error) {
+                                    return new Response(JSON.stringify({ success: false, error: error.message }));
+                                }
+                                return new Response(JSON.stringify({ success: true, message: "Se ha enviado un enlace de recuperación a tu correo electrónico." }));
+                            } catch (err) {
+                                return new Response(JSON.stringify({ success: false, error: err.message || "Error inesperado" }));
+                            }
+                        })();
+                    } else {
+                        const users = getUsers();
+                        const foundUser = Object.keys(users).find(uname => users[uname].email === email);
+                        if (!foundUser) {
+                            return Promise.resolve(new Response(JSON.stringify({ success: false, error: "No existe ninguna cuenta con ese correo electrónico." })));
+                        }
+                        return Promise.resolve(new Response(JSON.stringify({ success: true, message: "Modo Local: Enlace de recuperación simulado enviado a " + email })));
+                    }
+                }
+
+                if (activeAction === 'reset_password') {
+                    const password = bodyData.password;
+                    if (!password) {
+                        return Promise.resolve(new Response(JSON.stringify({ success: false, error: "La contraseña es requerida" })));
+                    }
+
+                    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                        return (async () => {
+                            try {
+                                const { error } = await supabaseClient.auth.updateUser({
+                                    password: password
+                                });
+                                if (error) {
+                                    return new Response(JSON.stringify({ success: false, error: error.message }));
+                                }
+                                return new Response(JSON.stringify({ success: true }));
+                            } catch (err) {
+                                return new Response(JSON.stringify({ success: false, error: err.message || "Error inesperado" }));
+                            }
+                        })();
+                    } else {
+                        const users = getUsers();
+                        if (users['invitado']) {
+                            users['invitado'].password = password;
+                        }
+                        if (users['max']) {
+                            users['max'].password = password;
+                        }
+                        saveUsers(users);
+                        return Promise.resolve(new Response(JSON.stringify({ success: true })));
                     }
                 }
 
@@ -842,6 +919,53 @@
 
     // Client-side execution bootstrap
     window.addEventListener('DOMContentLoaded', () => {
+        // Define global showAuthForm
+        window.showAuthForm = function(formId) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const forgotForm = document.getElementById('forgotPasswordForm');
+            const resetForm = document.getElementById('resetPasswordForm');
+            const tabs = document.querySelector('.auth-tabs');
+
+            if (tabs) {
+                if (formId === 'login' || formId === 'register') {
+                    tabs.style.display = 'flex';
+                } else {
+                    tabs.style.display = 'none';
+                }
+            }
+
+            if (loginForm) loginForm.style.display = formId === 'login' ? 'block' : 'none';
+            if (registerForm) registerForm.style.display = formId === 'register' ? 'block' : 'none';
+            if (forgotForm) forgotForm.style.display = formId === 'forgot' ? 'block' : 'none';
+            if (resetForm) resetForm.style.display = formId === 'reset' ? 'block' : 'none';
+
+            const tabBtns = document.querySelectorAll('.auth-tab');
+            if (tabBtns.length >= 2) {
+                if (formId === 'login') {
+                    tabBtns[0].classList.add('active');
+                    tabBtns[1].classList.remove('active');
+                } else if (formId === 'register') {
+                    tabBtns[0].classList.remove('active');
+                    tabBtns[1].classList.add('active');
+                }
+            }
+        };
+
+        window.switchAuthTab = function(tab) {
+            window.showAuthForm(tab);
+        };
+
+        // Parse hash params for recovery flow
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        if (hashParams.get('type') === 'recovery' || window.location.hash.includes('type=recovery')) {
+            setTimeout(() => {
+                if (typeof window.showAuthForm === 'function') {
+                    window.showAuthForm('reset');
+                }
+            }, 100);
+        }
+
         // Intercept client-side URL action=logout
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'logout') {
@@ -1135,35 +1259,33 @@
                 // Intercept Login Form
                 const loginForm = document.getElementById('loginForm');
                 if (loginForm) {
-                    const handleLogin = () => {
+                    const handleLogin = async () => {
                         const formData = new FormData(loginForm);
-                        const username = formData.get('username').trim().toLowerCase();
-                        const password = formData.get('password');
-
                         // Remove existing alerts
                         const alerts = loginForm.parentElement.querySelectorAll('.auth-alert');
                         alerts.forEach(al => al.remove());
 
-                        const users = getUsers();
-                        const user = users[username];
-
-                        if (!user || user.password !== password) {
-                            const errDiv = document.createElement('div');
-                            errDiv.className = 'auth-alert error';
-                            errDiv.innerText = 'Usuario o contraseña incorrectos';
-                            loginForm.insertBefore(errDiv, loginForm.firstChild);
-                            return;
+                        try {
+                            const res = await fetch('app.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                const successDiv = document.createElement('div');
+                                successDiv.className = 'auth-alert success';
+                                successDiv.innerText = 'Sesión iniciada con éxito. Redirigiendo...';
+                                loginForm.insertBefore(successDiv, loginForm.firstChild);
+                                setTimeout(() => { window.location.href = 'app.html'; }, 1000);
+                            } else {
+                                const errDiv = document.createElement('div');
+                                errDiv.className = 'auth-alert error';
+                                errDiv.innerText = data.error || 'Usuario o contraseña incorrectos';
+                                loginForm.insertBefore(errDiv, loginForm.firstChild);
+                            }
+                        } catch (err) {
+                            console.error("Login error:", err);
                         }
-
-                        localStorage.setItem('logged_in_user', username);
-                        localStorage.setItem('user_avatar', user.avatar || '');
-                        
-                        const successDiv = document.createElement('div');
-                        successDiv.className = 'auth-alert success';
-                        successDiv.innerText = 'Sesión iniciada con éxito. Redirigiendo...';
-                        loginForm.insertBefore(successDiv, loginForm.firstChild);
-
-                        setTimeout(() => { window.location.href = 'app.html'; }, 1000);
                     };
 
                     loginForm.onsubmit = function(e) {
@@ -1181,58 +1303,55 @@
                 // Intercept Register Form
                 const registerForm = document.getElementById('registerForm');
                 if (registerForm) {
-                    const handleRegister = () => {
+                    const handleRegister = async () => {
                         const formData = new FormData(registerForm);
-                        const username = formData.get('username').trim().toLowerCase();
-                        const email = formData.get('email').trim().toLowerCase();
-                        const password = formData.get('password');
-
                         // Remove existing alerts
                         const alerts = registerForm.parentElement.querySelectorAll('.auth-alert');
                         alerts.forEach(al => al.remove());
 
-                        if (!username || !email || !password) {
-                            const errDiv = document.createElement('div');
-                            errDiv.className = 'auth-alert error';
-                            errDiv.innerText = 'Todos los campos son requeridos';
-                            registerForm.insertBefore(errDiv, registerForm.firstChild);
-                            return;
-                        }
+                        try {
+                            const res = await fetch('app.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                const successDiv = document.createElement('div');
+                                successDiv.className = 'auth-alert success';
+                                successDiv.innerText = data.message || 'Registro completado con éxito. Ahora inicia sesión.';
+                                registerForm.insertBefore(successDiv, registerForm.firstChild);
 
-                        const users = getUsers();
-                        if (users[username]) {
-                            const errDiv = document.createElement('div');
-                            errDiv.className = 'auth-alert error';
-                            errDiv.innerText = 'El usuario ya existe';
-                            registerForm.insertBefore(errDiv, registerForm.firstChild);
-                            return;
-                        }
-
-                        users[username] = { email, password, avatar: '' };
-                        saveUsers(users);
-
-                        const successDiv = document.createElement('div');
-                        successDiv.className = 'auth-alert success';
-                        successDiv.innerText = 'Registro completado con éxito. Ahora inicia sesión.';
-                        registerForm.insertBefore(successDiv, registerForm.firstChild);
-
-                        setTimeout(() => {
-                            if (typeof switchAuthTab === 'function') {
-                                switchAuthTab('login');
-                            } else {
-                                const lForm = document.getElementById('loginForm');
-                                const rForm = document.getElementById('registerForm');
-                                const tabs = document.querySelectorAll('.auth-tab');
-                                if (lForm && rForm) {
-                                    lForm.classList.add('active');
-                                    rForm.classList.remove('active');
-                                    if (tabs.length >= 2) {
-                                        tabs[0].classList.add('active');
-                                        tabs[1].classList.remove('active');
-                                    }
+                                if (data.autoLogin) {
+                                    // If auto-logged in, redirect directly to app.html
+                                    setTimeout(() => { window.location.href = 'app.html'; }, 1500);
+                                } else {
+                                    setTimeout(() => {
+                                        if (typeof switchAuthTab === 'function') {
+                                            switchAuthTab('login');
+                                        } else {
+                                            const lForm = document.getElementById('loginForm');
+                                            const rForm = document.getElementById('registerForm');
+                                            const tabs = document.querySelectorAll('.auth-tab');
+                                            if (lForm && rForm) {
+                                                lForm.classList.add('active');
+                                                rForm.classList.remove('active');
+                                                if (tabs.length >= 2) {
+                                                    tabs[0].classList.add('active');
+                                                    tabs[1].classList.remove('active');
+                                                }
+                                            }
+                                        }
+                                    }, 3000);
                                 }
+                            } else {
+                                const errDiv = document.createElement('div');
+                                errDiv.className = 'auth-alert error';
+                                errDiv.innerText = data.error || 'El usuario ya existe';
+                                registerForm.insertBefore(errDiv, registerForm.firstChild);
                             }
-                        }, 1500);
+                        } catch (err) {
+                            console.error("Register error:", err);
+                        }
                     };
 
                     registerForm.onsubmit = function(e) {
@@ -1244,6 +1363,85 @@
                     };
                     registerForm.requestSubmit = function() {
                         handleRegister();
+                    };
+                }
+
+                // Intercept Forgot Password Form
+                const forgotForm = document.getElementById('forgotPasswordForm');
+                if (forgotForm) {
+                    const handleForgot = async () => {
+                        const formData = new FormData(forgotForm);
+                        // Remove existing alerts
+                        const alerts = forgotForm.parentElement.querySelectorAll('.auth-alert');
+                        alerts.forEach(al => al.remove());
+
+                        try {
+                            const res = await fetch('app.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                const successDiv = document.createElement('div');
+                                successDiv.className = 'auth-alert success';
+                                successDiv.innerText = data.message || 'Se ha enviado un enlace de recuperación a tu correo electrónico.';
+                                forgotForm.insertBefore(successDiv, forgotForm.firstChild);
+                            } else {
+                                const errDiv = document.createElement('div');
+                                errDiv.className = 'auth-alert error';
+                                errDiv.innerText = data.error || 'Ocurrió un error al enviar el correo.';
+                                forgotForm.insertBefore(errDiv, forgotForm.firstChild);
+                            }
+                        } catch (err) {
+                            console.error("Forgot password error:", err);
+                        }
+                    };
+
+                    forgotForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        handleForgot();
+                    };
+                }
+
+                // Intercept Reset Password Form
+                const resetForm = document.getElementById('resetPasswordForm');
+                if (resetForm) {
+                    const handleReset = async () => {
+                        const formData = new FormData(resetForm);
+                        // Remove existing alerts
+                        const alerts = resetForm.parentElement.querySelectorAll('.auth-alert');
+                        alerts.forEach(al => al.remove());
+
+                        try {
+                            const res = await fetch('app.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                const successDiv = document.createElement('div');
+                                successDiv.className = 'auth-alert success';
+                                successDiv.innerText = 'Contraseña actualizada con éxito. Redirigiendo...';
+                                resetForm.insertBefore(successDiv, resetForm.firstChild);
+
+                                setTimeout(() => {
+                                    window.location.hash = '';
+                                    window.location.href = 'app.html';
+                                }, 1500);
+                            } else {
+                                const errDiv = document.createElement('div');
+                                errDiv.className = 'auth-alert error';
+                                errDiv.innerText = data.error || 'Ocurrió un error al actualizar la contraseña.';
+                                resetForm.insertBefore(errDiv, resetForm.firstChild);
+                            }
+                        } catch (err) {
+                            console.error("Reset password error:", err);
+                        }
+                    };
+
+                    resetForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        handleReset();
                     };
                 }
             } else if (path.includes('routines.html') || path.includes('config.html')) {
