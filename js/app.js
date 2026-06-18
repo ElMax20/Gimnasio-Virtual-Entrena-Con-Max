@@ -280,18 +280,71 @@ function renderMacrosBars() {
     });
 }
 
+function getMealSections() {
+    const defaultSections = [
+        { key: 'desayuno', label: 'Desayuno' },
+        { key: 'almuerzo', label: 'Almuerzo' },
+        { key: 'merienda', label: 'Merienda' },
+        { key: 'agregar_comidas', label: 'Agregar Comidas' }
+    ];
+    const loggedInUser = localStorage.getItem('logged_in_user');
+    if (loggedInUser) {
+        const profile = JSON.parse(localStorage.getItem('profile_' + loggedInUser) || 'null');
+        if (profile && profile.custom_meal_sections) {
+            return [...defaultSections, ...profile.custom_meal_sections];
+        }
+    }
+    return defaultSections;
+}
+
 // Mostrar comidas por sección
 function renderAllMeals() {
-    const sections = ['desayuno', 'almuerzo', 'merienda', 'agregar_comidas'];
+    // Eliminar tarjetas personalizadas antes de reconstruir para evitar duplicados en el DOM
+    document.querySelectorAll('.custom-meal-card').forEach(el => el.remove());
+
+    const sections = getMealSections();
     sections.forEach(sec => {
-        const list = document.getElementById(`list${capitalize(sec)}`);
-        const kcalSpan = document.getElementById(`kcalVal${capitalize(sec)}`);
+        const key = typeof sec === 'string' ? sec : sec.key;
+        const label = typeof sec === 'string' ? capitalize(sec) : sec.label;
+        
+        // Crear dinámicamente la tarjeta si no existe (solo para las personalizadas)
+        let card = document.getElementById(`card${capitalize(key)}`);
+        if (!card && typeof sec === 'object') {
+            card = document.createElement('div');
+            card.className = 'meal-card custom-meal-card';
+            card.id = `card${capitalize(key)}`;
+            card.innerHTML = `
+                <div class="meal-card-header">
+                    <div class="meal-title" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M14.7 9.3a3.5 3.5 0 0 0-5.4 0"></path><path d="M2 12h20"></path></svg>
+                            ${escapeHtml(label)}
+                        </span>
+                        <button class="btn-delete-food" onclick="deleteCustomMealSection('${key}')" title="Eliminar Sección" style="background: none; border: none; color: var(--primary); padding: 0.2rem; cursor: pointer; display: inline-flex; align-items: center; border-radius: 4px; transition: var(--transition);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="meal-total-kcal" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);"><span id="kcalVal${capitalize(key)}">0</span> kcal</div>
+                <ul class="meal-food-list" id="list${capitalize(key)}" style="margin-top: 1rem; min-height: 20px;">
+                    <!-- Cargados dinámicamente -->
+                </ul>
+                <button class="btn-add-food-trigger" onclick="openAddFoodModal('${key}')" style="margin-top: 1rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Agregar alimento
+                </button>
+            `;
+            document.querySelector('.meals-grid').appendChild(card);
+        }
+
+        const list = document.getElementById(`list${capitalize(key)}`);
+        const kcalSpan = document.getElementById(`kcalVal${capitalize(key)}`);
         if (!list) return;
         
         list.innerHTML = '';
         let totalKcal = 0;
         
-        const foods = window.userDataMeals[sec] || [];
+        const foods = window.userDataMeals[key] || [];
         foods.forEach(food => {
             totalKcal += food.kcal;
             
@@ -304,7 +357,7 @@ function renderAllMeals() {
                 </div>
                 <div class="food-item-right">
                     <div class="food-kcal">${food.kcal} kcal</div>
-                    <button class="btn-delete-food" onclick="deleteFood('${sec}', '${food.id}')" title="Eliminar Alimento">
+                    <button class="btn-delete-food" onclick="deleteFood('${key}', '${food.id}')" title="Eliminar Alimento">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                     </button>
                 </div>
@@ -312,7 +365,7 @@ function renderAllMeals() {
             list.appendChild(li);
         });
         
-        kcalSpan.innerText = totalKcal;
+        if (kcalSpan) kcalSpan.innerText = totalKcal;
     });
 }
 
@@ -335,10 +388,7 @@ function searchFoodAPI(isAuto = false) {
     const query = document.getElementById('food_search').value.trim();
     const dropdown = document.getElementById('food_search_results');
     
-    if (query.length < 2) {
-        if (!isAuto) {
-            alert("Escribe al menos 2 caracteres para buscar.");
-        }
+    if (query.length < 1) {
         dropdown.style.display = 'none';
         dropdown.innerHTML = '';
         return;
@@ -469,6 +519,81 @@ function openAddFoodModal(section) {
 
 function closeAddFoodModal() {
     document.getElementById('addFoodModal').classList.remove('active');
+}
+
+function openAddMealSectionModal() {
+    document.getElementById('addMealSectionForm').reset();
+    document.getElementById('addMealSectionModal').classList.add('active');
+}
+
+function closeAddMealSectionModal() {
+    document.getElementById('addMealSectionModal').classList.remove('active');
+}
+
+function submitNewMealSection(e) {
+    e.preventDefault();
+    const name = document.getElementById('new_section_name').value.trim();
+    if (!name) return;
+    
+    const key = 'meal_' + Date.now();
+    
+    const loggedInUser = localStorage.getItem('logged_in_user');
+    if (loggedInUser) {
+        const profile = JSON.parse(localStorage.getItem('profile_' + loggedInUser) || 'null');
+        if (profile) {
+            if (!profile.custom_meal_sections) {
+                profile.custom_meal_sections = [];
+            }
+            profile.custom_meal_sections.push({ key, label: name });
+            localStorage.setItem('profile_' + loggedInUser, JSON.stringify(profile));
+            
+            if (typeof syncToSupabase === 'function') {
+                syncToSupabase('profile_data', profile);
+            }
+        }
+    }
+    
+    closeAddMealSectionModal();
+    renderAllMeals();
+}
+
+function deleteCustomMealSection(key) {
+    if (!confirm("¿Deseas eliminar este tipo de comida y todos sus alimentos registrados?")) return;
+    
+    const loggedInUser = localStorage.getItem('logged_in_user');
+    if (loggedInUser) {
+        const profile = JSON.parse(localStorage.getItem('profile_' + loggedInUser) || 'null');
+        if (profile && profile.custom_meal_sections) {
+            profile.custom_meal_sections = profile.custom_meal_sections.filter(s => s.key !== key);
+            localStorage.setItem('profile_' + loggedInUser, JSON.stringify(profile));
+            if (typeof syncToSupabase === 'function') {
+                syncToSupabase('profile_data', profile);
+            }
+        }
+    }
+    
+    if (window.userDataMeals && window.userDataMeals[key]) {
+        delete window.userDataMeals[key];
+        
+        if (loggedInUser) {
+            const mealsKey = 'meals_' + loggedInUser;
+            const allMeals = JSON.parse(localStorage.getItem(mealsKey) || '{}');
+            const todayStr = typeof getLocalDateString === 'function' ? getLocalDateString() : new Date().toLocaleDateString('sv').substring(0, 10);
+            if (allMeals[todayStr] && allMeals[todayStr][key]) {
+                delete allMeals[todayStr][key];
+                localStorage.setItem(mealsKey, JSON.stringify(allMeals));
+                if (typeof syncToSupabase === 'function') {
+                    syncToSupabase('meals', allMeals);
+                }
+            }
+        }
+    }
+    
+    const card = document.getElementById(`card${capitalize(key)}`);
+    if (card) card.remove();
+    
+    updateStatsOnScreen();
+    renderAllMeals();
 }
 
 // Guardar Comida vía AJAX
@@ -750,10 +875,10 @@ function renderWeightChart(history) {
 function capitalize(str) {
     if (!str) return '';
     
-    // Convertir de snake_case a camelCase para ids de elementos
+    // Convertir de snake_case a PascalCase para ids de elementos
     if (str.includes('_')) {
         const parts = str.split('_');
-        return parts[0] + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+        return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
     }
     
     return str.charAt(0).toUpperCase() + str.slice(1);

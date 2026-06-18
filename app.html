@@ -34,6 +34,7 @@
                 <li><a href="index.html">Inicio</a></li>
                 <li class="nav-auth-only" style="display: none;"><a href="app.html" class="active">Calorías</a></li>
                 <li class="nav-auth-only" style="display: none;"><a href="routines.html">Rutinas</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="blog.html">Blog de rutinas</a></li>
                 <li class="nav-auth-only" style="display: none;"><a href="config.html">Configuración</a></li>
                 <li id="nav-user-item" style="display: none;">
                     <a href="config.html" class="nav-avatar-container" title="Configuración de Perfil">
@@ -471,8 +472,12 @@
             </div>
 
             <!-- SECCIONES DE COMIDAS (Desayuno, Almuerzo, Merienda, Agregar Comidas) -->
-            <div class="meals-section-header">
-                <h3 style="font-size: 1.6rem; border: none; padding: 0;">Distribución de Comidas</h3>
+            <div class="meals-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.6rem; border: none; padding: 0; margin: 0;">Distribución de Comidas</h3>
+                <button class="btn-primary" onclick="openAddMealSectionModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 0.6rem 1.2rem; font-size: 0.9rem; border-radius: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Añadir Sección
+                </button>
             </div>
             
             <div class="meals-grid">
@@ -552,6 +557,29 @@
             <!-- Disclaimer legal en el Dashboard -->
             <div class="legal-disclaimer">
                 <strong>Aviso Legal (Disclaimer):</strong> Los cálculos calóricos y macronutrientes recomendados en esta aplicación web son solo una guía informativa basada en fórmulas estándar del sector deportivo. Esta información no reemplaza el consejo médico ni la guía personalizada de un nutricionista titulado. Realice cambios en su dieta y entrenamiento bajo su propio riesgo y supervisión.
+            </div>
+        </div>
+
+        <!-- MODAL AGREGAR SECCIÓN DE COMIDA -->
+        <div class="modal" id="addMealSectionModal">
+            <div class="modal-backdrop" onclick="closeAddMealSectionModal()"></div>
+            <div class="modal-content" style="max-width: 450px;">
+                <div class="modal-header">
+                    <h3 style="margin-bottom:0;">Añadir Nueva Sección de Comida</h3>
+                    <button class="btn-modal-close" onclick="closeAddMealSectionModal()">&times;</button>
+                </div>
+                <form id="addMealSectionForm" onsubmit="submitNewMealSection(event)">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="new_section_name">Nombre de la Sección</label>
+                            <input type="text" id="new_section_name" class="form-control" placeholder="Ej. Cena, Pre-Entreno, Colación..." required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="closeAddMealSectionModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Añadir Sección</button>
+                    </div>
+                </form>
             </div>
         </div>
 

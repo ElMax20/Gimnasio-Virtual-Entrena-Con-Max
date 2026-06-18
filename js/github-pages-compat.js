@@ -1444,7 +1444,7 @@
                         handleReset();
                     };
                 }
-            } else if (path.includes('routines.html') || path.includes('config.html')) {
+            } else if (path.includes('routines.html') || path.includes('config.html') || path.includes('blog.html')) {
                 // Redirect unauthorized page views
                 window.location.href = 'app.html';
             }

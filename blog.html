@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrena Con Max - Blog de Rutinas</title>
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Supabase Client SDK and Config -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/github-pages-compat.js"></script>
+</head>
+<body>
+    <!-- Efecto resplandor de fondo -->
+    <div class="bg-glow" id="bgGlow"></div>
+
+    <!-- Navegación -->
+    <header id="header">
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <span>ENTRENA CON</span> MAX
+            </a>
+            
+            <div class="menu-toggle" id="mobileMenu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Inicio</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="app.html">Calorías</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="routines.html">Rutinas</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="blog.html" class="active">Blog de rutinas</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="config.html">Configuración</a></li>
+                <li id="nav-user-item" style="display: none;">
+                    <a href="config.html" class="nav-avatar-container" title="Configuración de Perfil">
+                        <img src="" class="nav-avatar" id="nav-user-avatar" alt="Avatar">
+                    </a>
+                </li>
+                <li id="nav-login-item">
+                    <a href="app.html" class="btn-header">Iniciar Sesión</a>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <div class="container" style="margin-top: 3rem; margin-bottom: 5rem;">
+        <!-- Hero del Blog -->
+        <div class="blog-hero" style="background: linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%), url('img/blog_hero_bg.jpg') center/cover; padding: 4rem 2rem; border-radius: 12px; border: 1px solid rgba(255, 42, 42, 0.15); margin-bottom: 3rem; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,42,42,0.08) 0%, transparent 60%); z-index: 1;"></div>
+            <div style="position: relative; z-index: 2;">
+                <span class="tag" style="background: rgba(255, 42, 42, 0.15); color: var(--primary); padding: 0.4rem 1rem; border-radius: 50px; font-weight: 700; font-size: 0.85rem; letter-spacing: 1.5px; text-transform: uppercase;">
+                    Comunidad Fitness
+                </span>
+                <h1 class="text-gradient" style="font-size: 3rem; font-weight: 800; margin-top: 1.5rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: -1px;">
+                    Blog de Rutinas
+                </h1>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-size: 1.1rem; line-height: 1.6;">
+                    Artículos, guías y consejos científicos de entrenamiento redactados por Max para llevar tu fuerza y masa muscular al siguiente nivel.
+                </p>
+            </div>
+        </div>
+
+        <!-- Filtros del Blog -->
+        <div class="blog-filters" style="display: flex; gap: 10px; margin-bottom: 2.5rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-filter active" onclick="filterBlog('todos')" style="padding: 0.6rem 1.5rem; background: var(--bg-card); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">Todos</button>
+            <button class="btn-filter" onclick="filterBlog('hipertrofia')" style="padding: 0.6rem 1.5rem; background: rgba(255,255,255,0.03); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">Hipertrofia</button>
+            <button class="btn-filter" onclick="filterBlog('fuerza')" style="padding: 0.6rem 1.5rem; background: rgba(255,255,255,0.03); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">Fuerza</button>
+            <button class="btn-filter" onclick="filterBlog('nutricion')" style="padding: 0.6rem 1.5rem; background: rgba(255,255,255,0.03); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s ease;">Nutrición y Descanso</button>
+        </div>
+
+        <!-- Grid de Artículos -->
+        <div class="blog-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px;" id="blogGrid">
+            <!-- Artículo 1 -->
+            <div class="blog-card" data-category="hipertrofia" style="background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                <div style="height: 200px; background: linear-gradient(135deg, #ff2a2a 0%, #7a0c0c 100%); display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div style="position: absolute; top: 12px; left: 12px; background: rgba(10,10,10,0.85); color: var(--primary); padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 1px solid rgba(255,42,42,0.3);">Hipertrofia</div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: white; opacity: 0.9; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><path d="M6.5 6.5h11M6.5 17.5h11M3 10.5h18M3 13.5h18M3 6.5a3.5 3.5 0 0 1 3.5 3.5v3.5A3.5 3.5 0 0 1 3 17.5M21 6.5a3.5 3.5 0 0 0-3.5 3.5v3.5a3.5 3.5 0 0 0 3.5 3.5"/></svg>
+                </div>
+                <div style="padding: 1.5rem; flex-grow: 1; display: flex; flex-direction: column;">
+                    <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 5px;">
+                        <span>Por Max</span> &bull; <span>18 Jun 2026</span>
+                    </div>
+                    <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.8rem; color: var(--text-primary); line-height: 1.4;">Rutina Push-Pull-Legs: La Guía Definitiva</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; flex-grow: 1;">
+                        Descubre cómo estructurar la clásica división de empuje, tirón y pierna para optimizar tu volumen, intensidad y frecuencia de entrenamiento para hipertrofia pura.
+                    </p>
+                    <button class="btn-primary" onclick="openBlogModal(1)" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
+                        Leer Artículo Completo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Artículo 2 -->
+            <div class="blog-card" data-category="fuerza" style="background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                <div style="height: 200px; background: linear-gradient(135deg, #1f1f1f 0%, #0d0d0d 100%); display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 1px solid rgba(255, 42, 42, 0.2);">
+                    <div style="position: absolute; top: 12px; left: 12px; background: rgba(10,10,10,0.85); color: #e5c158; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 1px solid rgba(229,193,88,0.3);">Fuerza</div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary); opacity: 0.9; filter: drop-shadow(0 0 12px var(--primary));"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div style="padding: 1.5rem; flex-grow: 1; display: flex; flex-direction: column;">
+                    <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 5px;">
+                        <span>Por Max</span> &bull; <span>15 Jun 2026</span>
+                    </div>
+                    <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.8rem; color: var(--text-primary); line-height: 1.4;">5 Errores Comunes al Hacer Sentadillas</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; flex-grow: 1;">
+                        ¿Dolor en la rodilla o lumbar al bajar? Analizamos los fallos de técnica más comunes en el rey de los ejercicios y cómo corregirlos para levantar pesado sin lesionarte.
+                    </p>
+                    <button class="btn-primary" onclick="openBlogModal(2)" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
+                        Leer Artículo Completo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Artículo 3 -->
+            <div class="blog-card" data-category="nutricion" style="background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                <div style="height: 200px; background: linear-gradient(135deg, #162816 0%, #081008 100%); display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div style="position: absolute; top: 12px; left: 12px; background: rgba(10,10,10,0.85); color: #39b54a; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 1px solid rgba(57,181,74,0.3);">Nutrición / Descanso</div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #39b54a; opacity: 0.9; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><path d="M12 2v20M2 12h20M12 2a10 10 0 0 1 10 10M12 22a10 10 0 0 1-10-10M2 12a10 10 0 0 1 10-10M22 12a10 10 0 0 1-10 10"/></svg>
+                </div>
+                <div style="padding: 1.5rem; flex-grow: 1; display: flex; flex-direction: column;">
+                    <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 5px;">
+                        <span>Por Max</span> &bull; <span>10 Jun 2026</span>
+                    </div>
+                    <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.8rem; color: var(--text-primary); line-height: 1.4;">El Descanso: La Clave Oculta del Crecimiento</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; flex-grow: 1;">
+                        Destruyes fibras musculares en el gimnasio, pero creces en la cama. Descubre cómo regular tus horas de sueño y descanso activo para potenciar la síntesis proteica al máximo.
+                    </p>
+                    <button class="btn-primary" onclick="openBlogModal(3)" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
+                        Leer Artículo Completo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE LECTURA DE ARTÍCULO -->
+    <div class="modal" id="blogModal">
+        <div class="modal-backdrop" onclick="closeBlogModal()"></div>
+        <div class="modal-content" style="max-width: 750px; border-color: rgba(255, 42, 42, 0.2);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1.2rem;">
+                <div>
+                    <span id="modalArticleCategory" class="tag" style="background: rgba(255, 42, 42, 0.15); color: var(--primary); padding: 0.3rem 0.8rem; border-radius: 4px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">Categoría</span>
+                    <h2 id="modalArticleTitle" class="text-gradient" style="font-size: 1.8rem; font-weight: 800; margin-top: 0.8rem; margin-bottom: 0.4rem; text-transform: uppercase; line-height: 1.3;">Título del Artículo</h2>
+                    <div id="modalArticleMeta" style="color: var(--text-muted); font-size: 0.8rem;">Por Max &bull; 18 Jun 2026</div>
+                </div>
+                <button class="btn-modal-close" onclick="closeBlogModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 2rem 0; max-height: 55vh; overflow-y: auto; line-height: 1.7; color: var(--text-secondary); font-size: 1rem;" id="modalArticleBody">
+                Contenido del artículo...
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.2rem; display: flex; justify-content: flex-end;">
+                <button class="btn-secondary" onclick="closeBlogModal()">Cerrar Lectura</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Entrena Con Max. Todos los derechos reservados. Diseñado para optimizar tu rendimiento.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts de la Página -->
+    <script>
+        // Efecto del resplandor de fondo con el cursor
+        const bgGlow = document.getElementById('bgGlow');
+        document.addEventListener('mousemove', (e) => {
+            if (bgGlow) {
+                bgGlow.style.left = e.clientX + 'px';
+                bgGlow.style.top = e.clientY + 'px';
+            }
+        });
+
+        // Toggle del Menú Móvil
+        const mobileMenu = document.getElementById('mobileMenu');
+        const navLinks = document.getElementById('navLinks');
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', () => {
+                mobileMenu.classList.toggle('active');
+                navLinks.classList.toggle('mobile-active');
+            });
+        }
+
+        // Filtro de categorías del Blog
+        function filterBlog(category) {
+            // Actualizar botones activos
+            const buttons = document.querySelectorAll('.btn-filter');
+            buttons.forEach(btn => {
+                btn.style.background = 'rgba(255,255,255,0.03)';
+                btn.style.color = 'var(--text-secondary)';
+                btn.classList.remove('active');
+            });
+
+            // Encontrar botón presionado
+            const clickedBtn = event.target;
+            clickedBtn.style.background = 'var(--bg-card)';
+            clickedBtn.style.color = 'var(--text-primary)';
+            clickedBtn.classList.add('active');
+
+            // Filtrar tarjetas
+            const cards = document.querySelectorAll('.blog-card');
+            cards.forEach(card => {
+                if (category === 'todos' || card.getAttribute('data-category') === category) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Contenidos detallados de prueba de los artículos
+        const articlesData = {
+            1: {
+                title: "Rutina Push-Pull-Legs: La Guía Definitiva",
+                category: "Hipertrofia",
+                meta: "Por Max &bull; Publicado el 18 de Junio de 2026",
+                body: `
+                    <p>La división Push-Pull-Legs (Empuje-Tirón-Pierna) es uno de los esquemas de entrenamiento más balanceados y eficaces para la ganancia de masa muscular. Al agrupar los músculos según sus patrones de movimiento fisiológico en lugar de su ubicación anatómica, permite entrenar con alta frecuencia sin comprometer la recuperación de los tendones ni articulaciones.</p>
+                    
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">¿En qué consiste esta división?</h4>
+                    <ul>
+                        <li><strong>Día de Push (Empuje):</strong> Enfocado en pectorales, hombro anterior/lateral y tríceps. Los ejercicios dominantes son press de banca, press militar, fondos de paralelas e isolaciones de tríceps.</li>
+                        <li><strong>Día de Pull (Tirón):</strong> Enfocado en dorsales, trapecios, deltoides posterior y bíceps. Dominan los jalones al pecho, remos con barra y mancuernas, dominadas y curls de bíceps.</li>
+                        <li><strong>Día de Legs (Piernas):</strong> Enfocado en cuádriceps, femorales, glúteos y pantorrillas. Sentadillas, peso muerto rumano, zancadas y elevaciones de talones son los pilares.</li>
+                    </ul>
+
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Cómo programar la frecuencia</h4>
+                    <p>Para intermedios y avanzados, la frecuencia ideal es <strong>frecuencia 2 (PPL-PPL-Descanso)</strong>, lo cual permite estimular la síntesis de proteínas musculares dos veces por semana por cada grupo muscular. Para principiantes, un esquema de 3 días a la semana (Push, Pull, Piernas con días alternativos de descanso) es excelente para la adaptación neuronal inicial.</p>
+                    
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Ejemplo de rutina Push de Prueba:</h4>
+                    <ol>
+                        <li>Press de Banca Plano con barra: 4 series x 6-8 repeticiones.</li>
+                        <li>Press Militar con mancuernas de pie: 3 series x 8-10 repeticiones.</li>
+                        <li>Press Inclinado con mancuernas (30 grados): 3 series x 10-12 repeticiones.</li>
+                        <li>Elevaciones Laterales con polea: 4 series x 12-15 repeticiones.</li>
+                        <li>Extensiones de Tríceps tras nuca en polea: 3 series x 10-12 repeticiones.</li>
+                    </ol>
+                `
+            },
+            2: {
+                title: "5 Errores Comunes al Hacer Sentadillas",
+                category: "Fuerza",
+                meta: "Por Max &bull; Publicado el 15 de Junio de 2026",
+                body: `
+                    <p>La sentadilla con barra trasera es considerada unánimemente el ejercicio de fuerza por excelencia para el tren inferior. Sin embargo, debido a su complejidad biomecánica, es fácil cometer errores de técnica que no solo frenan tu progreso en peso, sino que ejercen presiones excesivas en la columna lumbar y las articulaciones de la rodilla.</p>
+                    
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">1. Guiño de Glúteo (Butt Wink)</h4>
+                    <p>Ocurre al descender más allá de la flexibilidad de los isquiotibiales y tobillos, lo que provoca una retroversión pélvica y redondeo de la espina lumbar al fondo de la sentadilla. <strong>Solución:</strong> Trabaja la movilidad del tobillo y desciende solo hasta el punto previo a que la pelvis rote hacia adentro.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">2. Valgo de Rodilla (Rodillas hacia adentro)</h4>
+                    <p>Al iniciar la fase concéntrica (subida), las rodillas colapsan hacia adentro. Esto pone en gran peligro los ligamentos cruzados. <strong>Solución:</strong> Visualiza "atornillar" tus pies contra el suelo girándolos hacia afuera activando los glúteos medios durante todo el recorrido.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">3. Elevación Temprana de Cadera (Sentadilla "Buenos Días")</h4>
+                    <p>Ocurre cuando la cadera sube mucho más rápido que el torso, convirtiendo la sentadilla en un peso muerto o flexión de espalda. <strong>Solución:</strong> Empuja activamente la espalda superior contra la barra desde el fondo para asegurar que el torso suba al mismo ritmo que las piernas.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">4. Falta de Profundidad</h4>
+                    <p>Hacer "medias sentadillas" limita el reclutamiento del glúteo mayor y del bíceps femoral. <strong>Solución:</strong> Baja el peso y asegúrate de que el pliegue de tu cadera rompa el paralelo con la parte superior de tus rodillas (90 grados o más).</p>
+                `
+            },
+            3: {
+                title: "El Descanso: La Clave Oculta del Crecimiento",
+                category: "Nutrición / Descanso",
+                meta: "Por Max &bull; Publicado el 10 de Junio de 2026",
+                body: `
+                    <p>Existe un viejo adagio en el fisicoculturismo: <i>"Destruyes el músculo en el gimnasio, lo alimentas en la mesa y lo construyes en la cama"</i>. A pesar de esto, el descanso sigue siendo el pilar más ignorado por la mayoría de las personas que buscan mejorar su composición corporal.</p>
+                    
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Fisiología del crecimiento muscular</h4>
+                    <p>Durante los entrenamientos intensos de fuerza, generas microdesgarros en las fibras del músculo esquelético. La reconstrucción de estas fibras para hacerlas más grandes y fuertes (hipertrofia) ocurre principalmente durante el descanso y las fases de sueño profundo (ondas lentas), impulsada por la secreción máxima de <strong>Hormona del Crecimiento Humano (HGH)</strong> y testosterona.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Las consecuencias de la falta de sueño</h4>
+                    <p>Dormir menos de 7 horas de manera regular no solo reduce la testosterona, sino que eleva dramáticamente los niveles de <strong>cortisol</strong> (la hormona del estrés), la cual es altamente catabólica (destruye masa muscular) y estimula la retención de grasa abdominal y líquidos subcutáneos.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Reglas de Oro del Descanso por Max:</h4>
+                    <ul>
+                        <li><strong>Higiene del sueño:</strong> Evita pantallas de luz azul (móviles, TV) al menos 45 minutos antes de dormir para permitir la segregación natural de melatonina.</li>
+                        <li><strong>Días de descanso absoluto:</strong> Programa por lo menos 1 o 2 días de descanso total a la semana para dar respiro al sistema nervioso central (SNC).</li>
+                        <li><strong>Deload (Semanas de descarga):</strong> Cada 6 a 8 semanas de entrenamiento al límite, realiza una semana con el 50% de tu volumen de series para regenerar tendones y ligamentos.</li>
+                    </ul>
+                `
+            }
+        };
+
+        // Abrir Modal de lectura
+        function openBlogModal(id) {
+            const article = articlesData[id];
+            if (!article) return;
+
+            document.getElementById('modalArticleTitle').innerText = article.title;
+            document.getElementById('modalArticleCategory').innerText = article.category;
+            document.getElementById('modalArticleMeta').innerHTML = article.meta;
+            document.getElementById('modalArticleBody').innerHTML = article.body;
+
+            document.getElementById('blogModal').classList.add('active');
+        }
+
+        // Cerrar Modal
+        function closeBlogModal() {
+            document.getElementById('blogModal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
