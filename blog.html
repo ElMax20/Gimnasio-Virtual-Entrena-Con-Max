@@ -90,8 +90,7 @@
                     <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.8rem; color: var(--text-primary); line-height: 1.4;">Rutina Push-Pull-Legs: La Guía Definitiva</h3>
                     <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; flex-grow: 1;">
                         Descubre cómo estructurar la clásica división de empuje, tirón y pierna para optimizar tu volumen, intensidad y frecuencia de entrenamiento para hipertrofia pura.
-                    </p>
-                    <button class="btn-primary" onclick="openBlogModal(1)" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
+                             <button class="btn-primary" onclick="window.location.href='article.html?id=1'" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
                         Leer Artículo Completo
                     </button>
                 </div>
@@ -111,7 +110,7 @@
                     <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; flex-grow: 1;">
                         ¿Dolor en la rodilla o lumbar al bajar? Analizamos los fallos de técnica más comunes en el rey de los ejercicios y cómo corregirlos para levantar pesado sin lesionarte.
                     </p>
-                    <button class="btn-primary" onclick="openBlogModal(2)" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
+                    <button class="btn-primary" onclick="window.location.href='article.html?id=2'" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
                         Leer Artículo Completo
                     </button>
                 </div>
@@ -131,31 +130,10 @@
                     <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; flex-grow: 1;">
                         Destruyes fibras musculares en el gimnasio, pero creces en la cama. Descubre cómo regular tus horas de sueño y descanso activo para potenciar la síntesis proteica al máximo.
                     </p>
-                    <button class="btn-primary" onclick="openBlogModal(3)" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
+                    <button class="btn-primary" onclick="window.location.href='article.html?id=3'" style="width: 100%; justify-content: center; padding: 0.7rem 1.5rem; font-size: 0.9rem; border-radius: 6px;">
                         Leer Artículo Completo
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE LECTURA DE ARTÍCULO -->
-    <div class="modal" id="blogModal">
-        <div class="modal-backdrop" onclick="closeBlogModal()"></div>
-        <div class="modal-content" style="max-width: 750px; border-color: rgba(255, 42, 42, 0.2);">
-            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1.2rem;">
-                <div>
-                    <span id="modalArticleCategory" class="tag" style="background: rgba(255, 42, 42, 0.15); color: var(--primary); padding: 0.3rem 0.8rem; border-radius: 4px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">Categoría</span>
-                    <h2 id="modalArticleTitle" class="text-gradient" style="font-size: 1.8rem; font-weight: 800; margin-top: 0.8rem; margin-bottom: 0.4rem; text-transform: uppercase; line-height: 1.3;">Título del Artículo</h2>
-                    <div id="modalArticleMeta" style="color: var(--text-muted); font-size: 0.8rem;">Por Max &bull; 18 Jun 2026</div>
-                </div>
-                <button class="btn-modal-close" onclick="closeBlogModal()">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 2rem 0; max-height: 55vh; overflow-y: auto; line-height: 1.7; color: var(--text-secondary); font-size: 1rem;" id="modalArticleBody">
-                Contenido del artículo...
-            </div>
-            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.2rem; display: flex; justify-content: flex-end;">
-                <button class="btn-secondary" onclick="closeBlogModal()">Cerrar Lectura</button>
             </div>
         </div>
     </div>
@@ -213,96 +191,6 @@
                     card.style.display = 'none';
                 }
             });
-        }
-
-        // Contenidos detallados de prueba de los artículos
-        const articlesData = {
-            1: {
-                title: "Rutina Push-Pull-Legs: La Guía Definitiva",
-                category: "Hipertrofia",
-                meta: "Por Max &bull; Publicado el 18 de Junio de 2026",
-                body: `
-                    <p>La división Push-Pull-Legs (Empuje-Tirón-Pierna) es uno de los esquemas de entrenamiento más balanceados y eficaces para la ganancia de masa muscular. Al agrupar los músculos según sus patrones de movimiento fisiológico en lugar de su ubicación anatómica, permite entrenar con alta frecuencia sin comprometer la recuperación de los tendones ni articulaciones.</p>
-                    
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">¿En qué consiste esta división?</h4>
-                    <ul>
-                        <li><strong>Día de Push (Empuje):</strong> Enfocado en pectorales, hombro anterior/lateral y tríceps. Los ejercicios dominantes son press de banca, press militar, fondos de paralelas e isolaciones de tríceps.</li>
-                        <li><strong>Día de Pull (Tirón):</strong> Enfocado en dorsales, trapecios, deltoides posterior y bíceps. Dominan los jalones al pecho, remos con barra y mancuernas, dominadas y curls de bíceps.</li>
-                        <li><strong>Día de Legs (Piernas):</strong> Enfocado en cuádriceps, femorales, glúteos y pantorrillas. Sentadillas, peso muerto rumano, zancadas y elevaciones de talones son los pilares.</li>
-                    </ul>
-
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Cómo programar la frecuencia</h4>
-                    <p>Para intermedios y avanzados, la frecuencia ideal es <strong>frecuencia 2 (PPL-PPL-Descanso)</strong>, lo cual permite estimular la síntesis de proteínas musculares dos veces por semana por cada grupo muscular. Para principiantes, un esquema de 3 días a la semana (Push, Pull, Piernas con días alternativos de descanso) es excelente para la adaptación neuronal inicial.</p>
-                    
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Ejemplo de rutina Push de Prueba:</h4>
-                    <ol>
-                        <li>Press de Banca Plano con barra: 4 series x 6-8 repeticiones.</li>
-                        <li>Press Militar con mancuernas de pie: 3 series x 8-10 repeticiones.</li>
-                        <li>Press Inclinado con mancuernas (30 grados): 3 series x 10-12 repeticiones.</li>
-                        <li>Elevaciones Laterales con polea: 4 series x 12-15 repeticiones.</li>
-                        <li>Extensiones de Tríceps tras nuca en polea: 3 series x 10-12 repeticiones.</li>
-                    </ol>
-                `
-            },
-            2: {
-                title: "5 Errores Comunes al Hacer Sentadillas",
-                category: "Fuerza",
-                meta: "Por Max &bull; Publicado el 15 de Junio de 2026",
-                body: `
-                    <p>La sentadilla con barra trasera es considerada unánimemente el ejercicio de fuerza por excelencia para el tren inferior. Sin embargo, debido a su complejidad biomecánica, es fácil cometer errores de técnica que no solo frenan tu progreso en peso, sino que ejercen presiones excesivas en la columna lumbar y las articulaciones de la rodilla.</p>
-                    
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">1. Guiño de Glúteo (Butt Wink)</h4>
-                    <p>Ocurre al descender más allá de la flexibilidad de los isquiotibiales y tobillos, lo que provoca una retroversión pélvica y redondeo de la espina lumbar al fondo de la sentadilla. <strong>Solución:</strong> Trabaja la movilidad del tobillo y desciende solo hasta el punto previo a que la pelvis rote hacia adentro.</p>
-
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">2. Valgo de Rodilla (Rodillas hacia adentro)</h4>
-                    <p>Al iniciar la fase concéntrica (subida), las rodillas colapsan hacia adentro. Esto pone en gran peligro los ligamentos cruzados. <strong>Solución:</strong> Visualiza "atornillar" tus pies contra el suelo girándolos hacia afuera activando los glúteos medios durante todo el recorrido.</p>
-
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">3. Elevación Temprana de Cadera (Sentadilla "Buenos Días")</h4>
-                    <p>Ocurre cuando la cadera sube mucho más rápido que el torso, convirtiendo la sentadilla en un peso muerto o flexión de espalda. <strong>Solución:</strong> Empuja activamente la espalda superior contra la barra desde el fondo para asegurar que el torso suba al mismo ritmo que las piernas.</p>
-
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">4. Falta de Profundidad</h4>
-                    <p>Hacer "medias sentadillas" limita el reclutamiento del glúteo mayor y del bíceps femoral. <strong>Solución:</strong> Baja el peso y asegúrate de que el pliegue de tu cadera rompa el paralelo con la parte superior de tus rodillas (90 grados o más).</p>
-                `
-            },
-            3: {
-                title: "El Descanso: La Clave Oculta del Crecimiento",
-                category: "Nutrición / Descanso",
-                meta: "Por Max &bull; Publicado el 10 de Junio de 2026",
-                body: `
-                    <p>Existe un viejo adagio en el fisicoculturismo: <i>"Destruyes el músculo en el gimnasio, lo alimentas en la mesa y lo construyes en la cama"</i>. A pesar de esto, el descanso sigue siendo el pilar más ignorado por la mayoría de las personas que buscan mejorar su composición corporal.</p>
-                    
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Fisiología del crecimiento muscular</h4>
-                    <p>Durante los entrenamientos intensos de fuerza, generas microdesgarros en las fibras del músculo esquelético. La reconstrucción de estas fibras para hacerlas más grandes y fuertes (hipertrofia) ocurre principalmente durante el descanso y las fases de sueño profundo (ondas lentas), impulsada por la secreción máxima de <strong>Hormona del Crecimiento Humano (HGH)</strong> y testosterona.</p>
-
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Las consecuencias de la falta de sueño</h4>
-                    <p>Dormir menos de 7 horas de manera regular no solo reduce la testosterona, sino que eleva dramáticamente los niveles de <strong>cortisol</strong> (la hormona del estrés), la cual es altamente catabólica (destruye masa muscular) y estimula la retención de grasa abdominal y líquidos subcutáneos.</p>
-
-                    <h4 style="color: var(--text-primary); margin-top: 1.5rem; font-size: 1.15rem; font-weight: 700; text-transform: uppercase;">Reglas de Oro del Descanso por Max:</h4>
-                    <ul>
-                        <li><strong>Higiene del sueño:</strong> Evita pantallas de luz azul (móviles, TV) al menos 45 minutos antes de dormir para permitir la segregación natural de melatonina.</li>
-                        <li><strong>Días de descanso absoluto:</strong> Programa por lo menos 1 o 2 días de descanso total a la semana para dar respiro al sistema nervioso central (SNC).</li>
-                        <li><strong>Deload (Semanas de descarga):</strong> Cada 6 a 8 semanas de entrenamiento al límite, realiza una semana con el 50% de tu volumen de series para regenerar tendones y ligamentos.</li>
-                    </ul>
-                `
-            }
-        };
-
-        // Abrir Modal de lectura
-        function openBlogModal(id) {
-            const article = articlesData[id];
-            if (!article) return;
-
-            document.getElementById('modalArticleTitle').innerText = article.title;
-            document.getElementById('modalArticleCategory').innerText = article.category;
-            document.getElementById('modalArticleMeta').innerHTML = article.meta;
-            document.getElementById('modalArticleBody').innerHTML = article.body;
-
-            document.getElementById('blogModal').classList.add('active');
-        }
-
-        // Cerrar Modal
-        function closeBlogModal() {
-            document.getElementById('blogModal').classList.remove('active');
         }
     </script>
 </body>

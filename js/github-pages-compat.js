@@ -267,20 +267,28 @@
         return null;
     }
 
+    const fatSecretCache = {};
+
     async function searchFatSecretFood(query) {
-        if (!query || query.trim().length < 2) {
+        if (!query || query.trim().length < 1) {
             return [];
         }
         
         const q = query.trim().toLowerCase();
         
         const getMockMatches = () => {
-            return MOCK_FOODS.filter(f => f.name.includes(q)).map((f, i) => ({
+            const matches = MOCK_FOODS.filter(f => f.name.includes(q)).map((f, i) => ({
                 food_id: 'mock_' + i + '_' + Date.now(),
                 food_name: f.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
                 food_description: `Per 100g - Calories: ${f.calories}kcal | Fat: ${f.fats.toFixed(2)}g | Carbs: ${f.carbs.toFixed(2)}g | Protein: ${f.proteins.toFixed(2)}g`
             }));
+            fatSecretCache[q] = matches;
+            return matches;
         };
+
+        if (fatSecretCache[q]) {
+            return fatSecretCache[q];
+        }
 
         try {
             const token = await getFatSecretToken();
@@ -293,56 +301,44 @@
             
             let data = null;
             try {
-                // Try direct first
-                const response = await fetch(apiUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
+                // Skip direct fetch because client-side cross-origin fetches directly to platform.fatsecret.com always fail due to CORS.
+                // Go straight to corsproxy.io for maximum performance.
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
+                const response = await fetch(proxyUrl, {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if (response.ok) {
                     data = await response.json();
                 } else {
-                    throw new Error("Direct search failed: " + response.statusText);
+                    throw new Error("corsproxy.io proxy search failed");
                 }
-            } catch (directErr) {
-                console.warn("Direct search failed. Trying AllOrigins proxy...", directErr);
+            } catch (proxyErr) {
+                console.warn("corsproxy.io failed. Trying AllOrigins proxy...", proxyErr);
                 try {
-                    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
-                    const response = await fetch(proxyUrl, {
+                    const proxyUrl2 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
+                    const response2 = await fetch(proxyUrl2, {
                         headers: { 'Authorization': 'Bearer ' + token }
                     });
-                    if (response.ok) {
-                        data = await response.json();
+                    if (response2.ok) {
+                        data = await response2.json();
                     } else {
                         throw new Error("AllOrigins proxy search failed");
                     }
-                } catch (proxyErr) {
-                    console.warn("AllOrigins search failed. Trying corsproxy.io...", proxyErr);
-                    try {
-                        const proxyUrl2 = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
-                        const response2 = await fetch(proxyUrl2, {
-                            headers: { 'Authorization': 'Bearer ' + token }
-                        });
-                        if (response2.ok) {
-                            data = await response2.json();
-                        } else {
-                            throw new Error("corsproxy.io failed");
-                        }
-                    } catch (proxy2Err) {
-                        console.error("All search requests failed:", proxy2Err);
-                        return getMockMatches();
-                    }
+                } catch (proxy2Err) {
+                    console.error("All search requests failed:", proxy2Err);
+                    return getMockMatches();
                 }
             }
 
             const foods = extractFoods(data);
             if (foods && foods.length > 0) {
-                return foods.map(f => ({
+                const finalResults = foods.map(f => ({
                     food_id: f.food_id || String(Math.random()),
                     food_name: f.food_name,
                     food_description: f.food_description || `Per 100g - Calories: 0kcal | Fat: 0.00g | Carbs: 0.00g | Protein: 0.00g`
                 }));
+                fatSecretCache[q] = finalResults;
+                return finalResults;
             } else {
                 console.warn("FatSecret API returned no results. Using local mock fallback.");
                 return getMockMatches();
@@ -1444,7 +1440,7 @@
                         handleReset();
                     };
                 }
-            } else if (path.includes('routines.html') || path.includes('config.html') || path.includes('blog.html')) {
+            } else if (path.includes('routines.html') || path.includes('config.html') || path.includes('blog.html') || path.includes('article.html')) {
                 // Redirect unauthorized page views
                 window.location.href = 'app.html';
             }

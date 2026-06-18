@@ -115,7 +115,7 @@
                         <!-- Caja de búsqueda oculta por defecto -->
                         <div id="searchExerciseBox" class="exercise-search-container" style="display:none; margin-top: 1rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 1rem; border-radius: 8px;">
                             <div style="display:flex; gap:0.5rem;">
-                                <input type="text" id="setup_exercise_search_input" class="form-control" placeholder="Buscar ejercicio, ej: Bench Press, Squat..." oninput="searchExercisesSetup()">
+                                <input type="text" id="setup_exercise_search_input" class="form-control" placeholder="Buscar ejercicio, ej: Bench Press, Squat..." oninput="debouncedSearchExercisesSetup()">
                                 <button type="button" class="btn-primary" onclick="searchExercisesSetup(true)">Buscar</button>
                             </div>
                             <div id="setup_search_results" class="search-results-dropdown-inline" style="display:none;"></div>
@@ -232,7 +232,7 @@
             <div id="workoutSearchExerciseBox" class="exercise-search-container" style="display:none; margin: 1.5rem auto; max-width: 600px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); padding: 1.5rem; border-radius: 8px;">
                 <h4 style="color:white; margin-top:0;">Agregar Ejercicio en Vivo</h4>
                 <div style="display:flex; gap:0.5rem; margin-bottom: 0.5rem;">
-                    <input type="text" id="workout_exercise_search_input" class="form-control" placeholder="Buscar ejercicio, ej: Bicep Curl..." oninput="searchExercisesWorkout()">
+                    <input type="text" id="workout_exercise_search_input" class="form-control" placeholder="Buscar ejercicio, ej: Bicep Curl..." oninput="debouncedSearchExercisesWorkout()">
                     <button type="button" class="btn-primary" onclick="searchExercisesWorkout(true)">Buscar</button>
                 </div>
                 <div id="workout_search_results" class="search-results-dropdown-inline" style="display:none;"></div>
@@ -315,7 +315,7 @@
                 <div class="form-group">
                     <label for="explore_search_input">Buscar en base de datos de ejercicios (ExerciseDB)</label>
                     <div style="display:flex; gap:0.5rem;">
-                        <input type="text" id="explore_search_input" class="form-control" placeholder="Ej: Dumbbell, Barbell, chest, biceps..." onkeyup="if(event.key==='Enter') searchExercisesExplore()">
+                        <input type="text" id="explore_search_input" class="form-control" placeholder="Ej: Dumbbell, Barbell, chest, biceps..." oninput="debouncedSearchExercisesExplore()">
                         <button type="button" class="btn-primary" onclick="searchExercisesExplore()">Buscar</button>
                     </div>
                 </div>

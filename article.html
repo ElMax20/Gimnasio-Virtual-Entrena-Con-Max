@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrena Con Max - Artículo</title>
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Supabase Client SDK and Config -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/github-pages-compat.js"></script>
+</head>
+<body>
+    <!-- Efecto resplandor de fondo -->
+    <div class="bg-glow" id="bgGlow"></div>
+
+    <!-- Navegación -->
+    <header id="header">
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <span>ENTRENA CON</span> MAX
+            </a>
+            
+            <div class="menu-toggle" id="mobileMenu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Inicio</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="app.html">Calorías</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="routines.html">Rutinas</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="blog.html" class="active">Blog de rutinas</a></li>
+                <li class="nav-auth-only" style="display: none;"><a href="config.html">Configuración</a></li>
+                <li id="nav-user-item" style="display: none;">
+                    <a href="config.html" class="nav-avatar-container" title="Configuración de Perfil">
+                        <img src="" class="nav-avatar" id="nav-user-avatar" alt="Avatar">
+                    </a>
+                </li>
+                <li id="nav-login-item">
+                    <a href="app.html" class="btn-header">Iniciar Sesión</a>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <div class="container" style="margin-top: 3rem; margin-bottom: 5rem; max-width: 800px;">
+        <!-- Botón Volver -->
+        <a href="blog.html" style="display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); text-decoration: none; font-weight: 600; font-size: 0.95rem; margin-bottom: 2rem; transition: var(--transition);" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color='var(--text-secondary)'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Volver al Blog de Rutinas
+        </a>
+
+        <!-- Contenedor del Artículo -->
+        <article id="articleContainer" style="display: none; background: var(--bg-card); border: 1px solid rgba(255, 42, 42, 0.15); border-radius: 16px; padding: 2.5rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,42,42,0.05) 0%, transparent 60%); z-index: 1; pointer-events: none;"></div>
+            
+            <div style="position: relative; z-index: 2;">
+                <!-- Cabecera del Artículo -->
+                <header style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+                    <span id="articleCategory" class="tag" style="background: rgba(255, 42, 42, 0.15); color: var(--primary); padding: 0.4rem 1rem; border-radius: 4px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; border: 1px solid rgba(255,42,42,0.25);">
+                        Categoría
+                    </span>
+                    <h1 id="articleTitle" class="text-gradient" style="font-size: 2.5rem; font-weight: 800; margin-top: 1.2rem; margin-bottom: 0.8rem; text-transform: uppercase; line-height: 1.2; letter-spacing: -0.5px;">
+                        Título del Artículo
+                    </h1>
+                    <div id="articleMeta" style="color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                        <span>Por Max</span> &bull; <span id="articleDate">18 Jun 2026</span>
+                    </div>
+                </header>
+
+                <!-- Cuerpo del Artículo -->
+                <div id="articleBody" style="line-height: 1.8; color: var(--text-secondary); font-size: 1.05rem;">
+                    Contenido cargando...
+                </div>
+            </div>
+        </article>
+
+        <!-- Estado de no encontrado o error -->
+        <div id="articleError" style="display: none; text-align: center; padding: 4rem 2rem; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+            <h3 style="color: var(--primary); font-size: 1.8rem; margin-bottom: 1rem;">Artículo no encontrado</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">El artículo que estás intentando leer no existe o ha sido eliminado.</p>
+            <a href="blog.html" class="btn-primary" style="display: inline-flex;">Volver al Blog</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Entrena Con Max. Todos los derechos reservados. Diseñado para optimizar tu rendimiento.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts de la Página -->
+    <script>
+        // Efecto del resplandor de fondo con el cursor
+        const bgGlow = document.getElementById('bgGlow');
+        document.addEventListener('mousemove', (e) => {
+            if (bgGlow) {
+                bgGlow.style.left = e.clientX + 'px';
+                bgGlow.style.top = e.clientY + 'px';
+            }
+        });
+
+        // Toggle del Menú Móvil
+        const mobileMenu = document.getElementById('mobileMenu');
+        const navLinks = document.getElementById('navLinks');
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', () => {
+                mobileMenu.classList.toggle('active');
+                navLinks.classList.toggle('mobile-active');
+            });
+        }
+
+        // Datos detallados de los artículos
+        const articlesData = {
+            1: {
+                title: "Rutina Push-Pull-Legs: La Guía Definitiva",
+                category: "Hipertrofia",
+                date: "18 Jun 2026",
+                body: `
+                    <p>La división Push-Pull-Legs (Empuje-Tirón-Pierna) es uno de los esquemas de entrenamiento más balanceados y eficaces para la ganancia de masa muscular. Al agrupar los músculos según sus patrones de movimiento fisiológico en lugar de su ubicación anatómica, permite entrenar con alta frecuencia sin comprometer la recuperación de los tendones ni articulaciones.</p>
+                    
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">¿En qué consiste esta división?</h4>
+                    <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem; list-style-type: disc;">
+                        <li style="margin-bottom: 0.5rem;"><strong>Día de Push (Empuje):</strong> Enfocado en pectorales, hombro anterior/lateral y tríceps. Los ejercicios dominantes son press de banca, press militar, fondos de paralelas e isolaciones de tríceps.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Día de Pull (Tirón):</strong> Enfocado en dorsales, trapecios, deltoides posterior y bíceps. Dominan los jalones al pecho, remos con barra y mancuernas, dominadas y curls de bíceps.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Día de Legs (Piernas):</strong> Enfocado en cuádriceps, femorales, glúteos y pantorrillas. Sentadillas, peso muerto rumano, zancadas y elevaciones de talones son los pilares.</li>
+                    </ul>
+
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">Cómo programar la frecuencia</h4>
+                    <p>Para intermedios y avanzados, la frecuencia ideal es <strong>frecuencia 2 (PPL-PPL-Descanso)</strong>, lo cual permite estimular la síntesis de proteínas musculares dos veces por semana por cada grupo muscular. Para principiantes, un esquema de 3 días a la semana (Push, Pull, Piernas con días alternativos de descanso) es excelente para la adaptación neuronal inicial.</p>
+                    
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">Ejemplo de rutina Push de Prueba:</h4>
+                    <ol style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                        <li style="margin-bottom: 0.4rem;">Press de Banca Plano con barra: 4 series x 6-8 repeticiones.</li>
+                        <li style="margin-bottom: 0.4rem;">Press Militar con mancuernas de pie: 3 series x 8-10 repeticiones.</li>
+                        <li style="margin-bottom: 0.4rem;">Press Inclinado con mancuernas (30 grados): 3 series x 10-12 repeticiones.</li>
+                        <li style="margin-bottom: 0.4rem;">Elevaciones Laterales con polea: 4 series x 12-15 repeticiones.</li>
+                        <li style="margin-bottom: 0.4rem;">Extensiones de Tríceps tras nuca en polea: 3 series x 10-12 repeticiones.</li>
+                    </ol>
+                `
+            },
+            2: {
+                title: "5 Errores Comunes al Hacer Sentadillas",
+                category: "Fuerza",
+                date: "15 Jun 2026",
+                body: `
+                    <p>La sentadilla con barra trasera es considerada unánimemente el ejercicio de fuerza por excelencia para el tren inferior. Sin embargo, debido a su complejidad biomecánica, es fácil cometer errores de técnica que no solo frenan tu progreso en peso, sino que ejercen presiones excesivas en la columna lumbar y las articulaciones de la rodilla.</p>
+                    
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">1. Guiño de Glúteo (Butt Wink)</h4>
+                    <p style="margin-bottom: 1.5rem;">Ocurre al descender más allá de la flexibilidad de los isquiotibiales y tobillos, lo que provoca una retroversión pélvica y redondeo de la espina lumbar al fondo de la sentadilla. <strong>Solución:</strong> Trabaja la movilidad del tobillo y desciende solo hasta el punto previo a que la pelvis rote hacia adentro.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">2. Valgo de Rodilla (Rodillas hacia adentro)</h4>
+                    <p style="margin-bottom: 1.5rem;">Al iniciar la fase concéntrica (subida), las rodillas colapsan hacia adentro. Esto pone en gran peligro los ligamentos cruzados. <strong>Solución:</strong> Visualiza "atornillar" tus pies contra el suelo girándolos hacia afuera activando los glúteos medios durante todo el recorrido.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">3. Elevación Temprana de Cadera (Sentadilla "Buenos Días")</h4>
+                    <p style="margin-bottom: 1.5rem;">Ocurre cuando la cadera sube mucho más rápido que el torso, convirtiendo la sentadilla en un peso muerto o flexión de espalda. <strong>Solución:</strong> Empuja activamente la espalda superior contra la barra desde el fondo para asegurar que el torso suba al mismo ritmo que las piernas.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">4. Falta de Profundidad</h4>
+                    <p style="margin-bottom: 1.5rem;">Hacer "medias sentadillas" limita el reclutamiento del glúteo mayor y del bíceps femoral. <strong>Solución:</strong> Baja el peso y asegúrate de que el pliegue de tu cadera rompa el paralelo con la parte superior de tus rodillas (90 grados o más).</p>
+                `
+            },
+            3: {
+                title: "El Descanso: La Clave Oculta del Crecimiento",
+                category: "Nutrición / Descanso",
+                date: "10 Jun 2026",
+                body: `
+                    <p>Existe un viejo adagio en el fisicoculturismo: <i>"Destruyes el músculo en el gimnasio, lo alimentas en la mesa y lo construyes en la cama"</i>. A pesar de esto, el descanso sigue siendo el pilar más ignorado por la mayoría de las personas que buscan mejorar su composición corporal.</p>
+                    
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">Fisiología del crecimiento muscular</h4>
+                    <p>Durante los entrenamientos intensos de fuerza, generas microdesgarros en las fibras del músculo esquelético. La reconstrucción de estas fibras para hacerlas más grandes y fuertes (hipertrofia) ocurre principalmente durante el descanso y las fases de sueño profundo (ondas lentas), impulsada por la secreción máxima de <strong>Hormona del Crecimiento Humano (HGH)</strong> y testosterona.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">Las consecuencias de la falta de sueño</h4>
+                    <p>Dormir menos de 7 horas de manera regular no solo reduce la testosterona, sino que eleva dramáticamente los niveles de <strong>cortisol</strong> (la hormona del estrés), la cual es altamente catabólica (destruye masa muscular) y estimula la retención de grasa abdominal y líquidos subcutáneos.</p>
+
+                    <h4 style="color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; font-weight: 700; text-transform: uppercase;">Reglas de Oro del Descanso por Max:</h4>
+                    <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem; list-style-type: disc;">
+                        <li style="margin-bottom: 0.5rem;"><strong>Higiene del sueño:</strong> Evita pantallas de luz azul (móviles, TV) al menos 45 minutos antes de dormir para permitir la segregación natural de melatonina.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Días de descanso absoluto:</strong> Programa por lo menos 1 o 2 días de descanso total a la semana para dar respiro al sistema nervioso central (SNC).</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Deload (Semanas de descarga):</strong> Cada 6 a 8 semanas de entrenamiento al límite, realiza una semana con el 50% de tu volumen de series para regenerar tendones y ligamentos.</li>
+                    </ul>
+                `
+            }
+        };
+
+        // Capturar ID del parámetro URL y renderizar
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const id = parseInt(params.get('id'));
+            
+            const article = articlesData[id];
+            if (article) {
+                document.getElementById('articleTitle').innerText = article.title;
+                document.getElementById('articleCategory').innerText = article.category;
+                document.getElementById('articleDate').innerText = article.date;
+                document.getElementById('articleBody').innerHTML = article.body;
+                
+                document.getElementById('articleContainer').style.display = 'block';
+                document.getElementById('articleError').style.display = 'none';
+            } else {
+                document.getElementById('articleContainer').style.display = 'none';
+                document.getElementById('articleError').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

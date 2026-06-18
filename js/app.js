@@ -1092,13 +1092,21 @@ function hideAddExerciseSearch() {
     document.getElementById('setup_search_results').style.display = 'none';
 }
 
+let searchSetupTimeout = null;
+function debouncedSearchExercisesSetup() {
+    clearTimeout(searchSetupTimeout);
+    searchSetupTimeout = setTimeout(() => {
+        searchExercisesSetup();
+    }, 250);
+}
+
 // Búsqueda de ejercicios en Setup
 function searchExercisesSetup(force = false) {
     const input = document.getElementById('setup_exercise_search_input');
     const query = input.value.trim();
     const resultsDiv = document.getElementById('setup_search_results');
     
-    if (!force && query.length < 2) {
+    if (!force && query.length < 1) {
         resultsDiv.style.display = 'none';
         return;
     }
@@ -1925,12 +1933,20 @@ function hideWorkoutAddExerciseSearch() {
     document.getElementById('workout_search_results').style.display = 'none';
 }
 
+let searchWorkoutTimeout = null;
+function debouncedSearchExercisesWorkout() {
+    clearTimeout(searchWorkoutTimeout);
+    searchWorkoutTimeout = setTimeout(() => {
+        searchExercisesWorkout();
+    }, 250);
+}
+
 function searchExercisesWorkout(force = false) {
     const input = document.getElementById('workout_exercise_search_input');
     const query = input.value.trim();
     const resultsDiv = document.getElementById('workout_search_results');
     
-    if (!force && query.length < 2) {
+    if (!force && query.length < 1) {
         resultsDiv.style.display = 'none';
         return;
     }
@@ -2396,13 +2412,21 @@ function closeExploreModal() {
     document.getElementById('exploreModal').classList.remove('active');
 }
 
+let searchExploreTimeout = null;
+function debouncedSearchExercisesExplore() {
+    clearTimeout(searchExploreTimeout);
+    searchExploreTimeout = setTimeout(() => {
+        searchExercisesExplore();
+    }, 250);
+}
+
 function searchExercisesExplore() {
     const input = document.getElementById('explore_search_input');
     const query = input.value.trim();
     const resultsList = document.getElementById('exploreResultsList');
     
-    if (query.length < 2) {
-        alert("Escribe al menos 2 caracteres para buscar.");
+    if (query.length < 1) {
+        resultsList.innerHTML = '<div class="chart-empty-state">Escribe algún término para iniciar la búsqueda en ExerciseDB.</div>';
         return;
     }
     
