@@ -601,6 +601,38 @@ footer p {
     display: block;
 }
 
+.btn-auth-submit {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.5rem;
+    padding: 1.2rem 2.5rem;
+    background: linear-gradient(135deg, var(--primary) 0%, #b30000 100%);
+    color: white;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 42, 42, 0.2);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 25px rgba(255, 42, 42, 0.3);
+}
+
+.btn-auth-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255, 42, 42, 0.5);
+    border-color: rgba(255, 42, 42, 0.4);
+    filter: brightness(1.1);
+}
+
+.btn-auth-submit:active {
+    transform: translateY(1px);
+    box-shadow: 0 4px 15px rgba(255, 42, 42, 0.3);
+}
+
 /* Formulario Onboarding */
 .onboarding-page {
     min-height: 100vh;

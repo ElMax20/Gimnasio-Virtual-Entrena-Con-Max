@@ -1,13 +1,7 @@
 // github-pages-compat.js - Client-side LocalStorage DB for GitHub Pages Compatibility
 (function() {
-    // Detect if we are running in static mode (no PHP)
-    const isStatic = window.location.pathname.endsWith('.html') || 
-                     window.location.hostname.includes('github.io') || 
-                     window.location.protocol === 'file:';
-
-    if (!isStatic) {
-        return; // Run PHP normally if hosted on local server
-    }
+    // Always run in static mode since we are working directly on GitHub/statically (no PHP)
+    const isStatic = true;
 
     console.log("GitHub Pages Compatibility Mode Active: Using LocalStorage Database.");
 
@@ -90,11 +84,33 @@
         localStorage.setItem('static_users', JSON.stringify(users));
     }
 
+    // Sync cache data to Supabase in the background
+    async function syncToSupabase(column, val) {
+        if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+        const userId = localStorage.getItem('logged_in_user_id');
+        if (!userId) return;
+        
+        try {
+            const updateData = {};
+            updateData[column] = val;
+            const { error } = await supabaseClient
+                .from('user_profiles')
+                .update(updateData)
+                .eq('id', userId);
+            if (error) {
+                console.error(`Error syncing ${column} to Supabase:`, error);
+            }
+        } catch (err) {
+            console.error(`Exception syncing ${column} to Supabase:`, err);
+        }
+    }
+
     function getProfile(username) {
         return JSON.parse(localStorage.getItem('profile_' + username) || 'null');
     }
     function saveProfile(username, profile) {
         localStorage.setItem('profile_' + username, JSON.stringify(profile));
+        syncToSupabase('profile_data', profile);
     }
 
     function getRoutines(username) {
@@ -102,6 +118,7 @@
     }
     function saveRoutines(username, routines) {
         localStorage.setItem('routines_' + username, JSON.stringify(routines));
+        syncToSupabase('routines', routines);
     }
 
     function getMeals(username) {
@@ -109,6 +126,7 @@
     }
     function saveMeals(username, meals) {
         localStorage.setItem('meals_' + username, JSON.stringify(meals));
+        syncToSupabase('meals', meals);
     }
     function getMealsForDate(username, dateStr) {
         const allMeals = getMeals(username);
@@ -137,6 +155,7 @@
     }
     function saveWeightHistory(username, history) {
         localStorage.setItem('weight_history_' + username, JSON.stringify(history));
+        syncToSupabase('weight_history', history);
     }
 
     function getWorkoutLogs(username) {
@@ -144,6 +163,7 @@
     }
     function saveWorkoutLogs(username, logs) {
         localStorage.setItem('workout_logs_' + username, JSON.stringify(logs));
+        syncToSupabase('workout_logs', logs);
     }
 
     // --- FatSecret API Helpers ---
@@ -377,35 +397,169 @@
                         return Promise.resolve(new Response(JSON.stringify({ success: false, error: "Campos requeridos" })));
                     }
 
-                    const users = getUsers();
-                    if (users[username]) {
-                        return Promise.resolve(new Response(JSON.stringify({ success: false, error: "El usuario ya existe" })));
-                    }
+                    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                        return (async () => {
+                            try {
+                                const { data: existing, error: checkErr } = await supabaseClient
+                                    .from('user_profiles')
+                                    .select('username')
+                                    .eq('username', username);
+                                
+                                if (checkErr) {
+                                    return new Response(JSON.stringify({ success: false, error: "Error al validar usuario: " + checkErr.message }));
+                                }
+                                if (existing && existing.length > 0) {
+                                    return new Response(JSON.stringify({ success: false, error: "El nombre de usuario ya existe" }));
+                                }
 
-                    users[username] = { email, password, avatar: '' };
-                    saveUsers(users);
-                    
-                    return Promise.resolve(new Response(JSON.stringify({ success: true, message: "Registro completado con éxito. Ahora inicia sesión." })));
+                                const redirectUrl = window.location.origin + window.location.pathname.replace(/app\.html|config\.html|routines\.html|index\.html/, '') + 'app.html?verified=true';
+                                const { data: signUpData, error: signUpErr } = await supabaseClient.auth.signUp({
+                                    email: email,
+                                    password: password,
+                                    options: {
+                                        emailRedirectTo: redirectUrl
+                                    }
+                                });
+
+                                if (signUpErr) {
+                                    return new Response(JSON.stringify({ success: false, error: signUpErr.message }));
+                                }
+
+                                const { error: profileErr } = await supabaseClient
+                                    .from('user_profiles')
+                                    .insert({
+                                        id: signUpData.user.id,
+                                        username: username,
+                                        email: email,
+                                        profile_data: null,
+                                        weight_history: [],
+                                        meals: {},
+                                        routines: [],
+                                        workout_logs: []
+                                    });
+
+                                if (profileErr) {
+                                    return new Response(JSON.stringify({ success: false, error: "Error al crear perfil de usuario: " + profileErr.message }));
+                                }
+
+                                return new Response(JSON.stringify({ 
+                                    success: true, 
+                                    message: "Se ha enviado un correo electrónico de confirmación a " + email + ". Por favor, confirma tu cuenta para poder iniciar sesión." 
+                                }));
+                            } catch (err) {
+                                return new Response(JSON.stringify({ success: false, error: err.message || "Error inesperado" }));
+                            }
+                        })();
+                    } else {
+                        const users = getUsers();
+                        if (users[username]) {
+                            return Promise.resolve(new Response(JSON.stringify({ success: false, error: "El usuario ya existe" })));
+                        }
+
+                        users[username] = { email, password, avatar: '' };
+                        saveUsers(users);
+                        
+                        return Promise.resolve(new Response(JSON.stringify({ success: true, message: "Registro completado con éxito. Ahora inicia sesión." })));
+                    }
                 }
 
                 if (activeAction === 'login') {
-                    const username = bodyData.username.trim().toLowerCase();
+                    const usernameOrEmail = bodyData.username.trim().toLowerCase();
                     const password = bodyData.password;
-                    
-                    const users = getUsers();
-                    const user = users[username];
-                    
-                    if (!user || user.password !== password) {
-                        return Promise.resolve(new Response(JSON.stringify({ success: false, error: "Usuario o contraseña incorrectos" })));
-                    }
 
-                    localStorage.setItem('logged_in_user', username);
-                    localStorage.setItem('user_avatar', user.avatar || '');
-                    currentUsername = username;
-                    
-                    // Redirect on login
-                    setTimeout(() => { window.location.href = 'app.html'; }, 500);
-                    return Promise.resolve(new Response(JSON.stringify({ success: true, username })));
+                    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                        return (async () => {
+                            try {
+                                let targetEmail = usernameOrEmail;
+                                let resolvedUsername = '';
+
+                                if (!usernameOrEmail.includes('@')) {
+                                    const { data: profileRows, error: findErr } = await supabaseClient
+                                        .from('user_profiles')
+                                        .select('email, username')
+                                        .eq('username', usernameOrEmail);
+
+                                    if (findErr) {
+                                        return new Response(JSON.stringify({ success: false, error: "Error al buscar usuario: " + findErr.message }));
+                                    }
+                                    if (!profileRows || profileRows.length === 0) {
+                                        return new Response(JSON.stringify({ success: false, error: "Usuario o contraseña incorrectos" }));
+                                    }
+                                    targetEmail = profileRows[0].email;
+                                    resolvedUsername = profileRows[0].username;
+                                } else {
+                                    const { data: profileRows } = await supabaseClient
+                                        .from('user_profiles')
+                                        .select('username')
+                                        .eq('email', usernameOrEmail);
+                                    if (profileRows && profileRows.length > 0) {
+                                        resolvedUsername = profileRows[0].username;
+                                    } else {
+                                        resolvedUsername = usernameOrEmail.split('@')[0];
+                                    }
+                                }
+
+                                const { data: signInData, error: signInErr } = await supabaseClient.auth.signInWithPassword({
+                                    email: targetEmail,
+                                    password: password
+                                });
+
+                                if (signInErr) {
+                                    let errorMsg = signInErr.message;
+                                    if (errorMsg.toLowerCase().includes("email not confirmed")) {
+                                        errorMsg = "Por favor confirma tu cuenta haciendo clic en el enlace enviado a tu correo antes de iniciar sesión.";
+                                    } else if (errorMsg.toLowerCase().includes("invalid login credentials")) {
+                                        errorMsg = "Usuario o contraseña incorrectos";
+                                    }
+                                    return new Response(JSON.stringify({ success: false, error: errorMsg }));
+                                }
+
+                                const { data: profileRow } = await supabaseClient
+                                    .from('user_profiles')
+                                    .select('*')
+                                    .eq('id', signInData.user.id)
+                                    .single();
+
+                                if (profileRow) {
+                                    localStorage.setItem('logged_in_user', resolvedUsername);
+                                    localStorage.setItem('logged_in_user_id', signInData.user.id);
+                                    localStorage.setItem('logged_in_user_email', targetEmail);
+                                    localStorage.setItem('user_avatar', (profileRow.profile_data && profileRow.profile_data.avatar) || '');
+                                    
+                                    if (profileRow.profile_data) {
+                                        localStorage.setItem('profile_' + resolvedUsername, JSON.stringify(profileRow.profile_data));
+                                    } else {
+                                        localStorage.removeItem('profile_' + resolvedUsername);
+                                    }
+                                    localStorage.setItem('weight_history_' + resolvedUsername, JSON.stringify(profileRow.weight_history || []));
+                                    localStorage.setItem('meals_' + resolvedUsername, JSON.stringify(profileRow.meals || {}));
+                                    localStorage.setItem('routines_' + resolvedUsername, JSON.stringify(profileRow.routines || []));
+                                    localStorage.setItem('workout_logs_' + resolvedUsername, JSON.stringify(profileRow.workout_logs || []));
+                                }
+
+                                currentUsername = resolvedUsername;
+                                setTimeout(() => { window.location.href = 'app.html'; }, 500);
+                                return new Response(JSON.stringify({ success: true, username: resolvedUsername }));
+                            } catch (err) {
+                                return new Response(JSON.stringify({ success: false, error: err.message || "Error inesperado" }));
+                            }
+                        })();
+                    } else {
+                        const username = usernameOrEmail;
+                        const users = getUsers();
+                        const user = users[username];
+                        
+                        if (!user || user.password !== password) {
+                            return Promise.resolve(new Response(JSON.stringify({ success: false, error: "Usuario o contraseña incorrectos" })));
+                        }
+
+                        localStorage.setItem('logged_in_user', username);
+                        localStorage.setItem('user_avatar', user.avatar || '');
+                        currentUsername = username;
+                        
+                        setTimeout(() => { window.location.href = 'app.html'; }, 500);
+                        return Promise.resolve(new Response(JSON.stringify({ success: true, username })));
+                    }
                 }
 
                 if (activeAction === 'onboarding') {
@@ -546,10 +700,19 @@
             // GET actions
             if (activeAction === 'logout') {
                 localStorage.removeItem('logged_in_user');
+                localStorage.removeItem('logged_in_user_id');
                 localStorage.removeItem('user_avatar');
                 currentUsername = null;
-                window.location.href = 'app.html';
-                return Promise.resolve(new Response(JSON.stringify({ success: true })));
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    return (async () => {
+                        await supabaseClient.auth.signOut();
+                        window.location.href = 'app.html';
+                        return new Response(JSON.stringify({ success: true }));
+                    })();
+                } else {
+                    window.location.href = 'app.html';
+                    return Promise.resolve(new Response(JSON.stringify({ success: true })));
+                }
             }
 
             if (ajax === 'search_food') {
@@ -659,6 +822,7 @@
                 const logs = getWorkoutLogs(currentUsername);
                 bodyData.id = Date.now();
                 bodyData.created_at = new Date().toISOString();
+                bodyData.date = new Date().toISOString();
                 logs.push(bodyData);
                 saveWorkoutLogs(currentUsername, logs);
                 return Promise.resolve(new Response(JSON.stringify({ success: true })));
@@ -682,16 +846,274 @@
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'logout') {
             localStorage.removeItem('logged_in_user');
+            localStorage.removeItem('logged_in_user_id');
             localStorage.removeItem('user_avatar');
-            window.location.href = 'app.html';
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                supabaseClient.auth.signOut().then(() => {
+                    window.location.href = 'app.html';
+                });
+            } else {
+                window.location.href = 'app.html';
+            }
             return;
         }
 
-        // Initialize Default Demo Users and Profile if empty
+        if (urlParams.get('verified') === 'true') {
+            setTimeout(() => {
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'auth-alert success';
+                    successDiv.style.display = 'block';
+                    successDiv.innerText = '¡Correo confirmado con éxito! Ya puedes iniciar sesión.';
+                    loginForm.insertBefore(successDiv, loginForm.firstChild);
+                }
+            }, 100);
+        }
+
+        // Initialize Default Demo Users and Profile if empty or missing
         const users = getUsers();
-        if (Object.keys(users).length === 0) {
+        let usersUpdated = false;
+        if (!users['invitado']) {
             users['invitado'] = { email: 'invitado@entrenaconmax.com', password: '123', avatar: '' };
+            usersUpdated = true;
+        }
+        if (!users['max']) {
+            users['max'] = { email: 'max@entrenaconmax.com', password: 'admin', avatar: '' };
+            usersUpdated = true;
+        }
+        if (usersUpdated) {
             saveUsers(users);
+        }
+
+        // Initialize default profiles if they don't exist
+        if (!getProfile('invitado')) {
+            const profileData = {
+                weight: 75,
+                height: 175,
+                unit_weight: 'kg',
+                unit_height: 'cm',
+                gender: 'male',
+                age: 25,
+                activity: 'moderado',
+                goal: 'mantenimiento',
+                body_fat: '13-15%',
+                target_weight: 75,
+                tmb: 1700,
+                getd: 2338,
+                target_calories: 2338,
+                is_capped: false,
+                macros: { protein_g: 135, fat_g: 65, carb_g: 300 }
+            };
+            saveProfile('invitado', profileData);
+            saveWeightHistory('invitado', [
+                { weight: 77.2, date: '2026-06-01' },
+                { weight: 76.5, date: '2026-06-08' },
+                { weight: 75.0, date: getLocalDateString() }
+            ]);
+        }
+
+        if (!getProfile('max')) {
+            const profileData = {
+                weight: 80,
+                height: 180,
+                unit_weight: 'kg',
+                unit_height: 'cm',
+                gender: 'male',
+                age: 28,
+                activity: 'alto',
+                goal: 'subida_peso',
+                body_fat: '11-12%',
+                target_weight: 85,
+                tmb: 1820,
+                getd: 2821,
+                target_calories: 3221,
+                is_capped: false,
+                macros: { protein_g: 160, fat_g: 90, carb_g: 440 }
+            };
+            saveProfile('max', profileData);
+            saveWeightHistory('max', [
+                { weight: 78.5, date: '2026-06-01' },
+                { weight: 79.2, date: '2026-06-08' },
+                { weight: 80.0, date: getLocalDateString() }
+            ]);
+        }
+
+        // Initialize default routines and sample logs
+        if (getRoutines('invitado').length === 0) {
+            const routines = [
+                {
+                    id: 100001,
+                    title: 'Fuerza General Inicial',
+                    description: 'sentadilla con barra (squats), press militar con barra',
+                    exercises: [
+                        {
+                            name: 'sentadilla con barra (squats)',
+                            rest_time: 120,
+                            use_discs: true,
+                            bar_weight: 20,
+                            sets: [
+                                { set_number: 1, weight: 40, reps: '12' },
+                                { set_number: 2, weight: 50, reps: '10' }
+                            ]
+                        },
+                        {
+                            name: 'press militar con barra',
+                            rest_time: 90,
+                            use_discs: true,
+                            bar_weight: 15,
+                            sets: [
+                                { set_number: 1, weight: 25, reps: '10' },
+                                { set_number: 2, weight: 30, reps: '8' }
+                            ]
+                        }
+                    ]
+                }
+            ];
+            saveRoutines('invitado', routines);
+            
+            const logs = [
+                {
+                    id: 200001,
+                    routine_id: 100001,
+                    routine_title: 'Fuerza General Inicial',
+                    duration: 2400,
+                    volume: 1320,
+                    total_sets: 4,
+                    total_reps: 40,
+                    created_at: '2026-06-10T10:00:00.000Z',
+                    date: '2026-06-10T10:00:00.000Z',
+                    exercises: []
+                },
+                {
+                    id: 200002,
+                    routine_id: 100001,
+                    routine_title: 'Fuerza General Inicial',
+                    duration: 2300,
+                    volume: 1450,
+                    total_sets: 4,
+                    total_reps: 40,
+                    created_at: '2026-06-14T10:00:00.000Z',
+                    date: '2026-06-14T10:00:00.000Z',
+                    exercises: []
+                },
+                {
+                    id: 200003,
+                    routine_id: 100001,
+                    routine_title: 'Fuerza General Inicial',
+                    duration: 2200,
+                    volume: 1560,
+                    total_sets: 4,
+                    total_reps: 40,
+                    created_at: new Date().toISOString(),
+                    date: new Date().toISOString(),
+                    exercises: []
+                }
+            ];
+            saveWorkoutLogs('invitado', logs);
+        }
+
+        if (getRoutines('max').length === 0) {
+            const routines = [
+                {
+                    id: 100002,
+                    title: 'Pecho y Tríceps Leyenda',
+                    description: 'banca con barra (bench press), extensiones de tríceps en polea',
+                    exercises: [
+                        {
+                            name: 'banca con barra (bench press)',
+                            rest_time: 90,
+                            use_discs: true,
+                            bar_weight: 20,
+                            sets: [
+                                { set_number: 1, weight: 60, reps: '12' },
+                                { set_number: 2, weight: 80, reps: '10' },
+                                { set_number: 3, weight: 100, reps: '8' }
+                            ]
+                        },
+                        {
+                            name: 'extensiones de tríceps en polea',
+                            rest_time: 60,
+                            use_discs: false,
+                            bar_weight: 0,
+                            sets: [
+                                { set_number: 1, weight: 25, reps: '15' },
+                                { set_number: 2, weight: 30, reps: '12' },
+                                { set_number: 3, weight: 35, reps: '10' }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 100003,
+                    title: 'Espalda y Bíceps Brutal',
+                    description: 'remo con barra, curl de biceps con barra',
+                    exercises: [
+                        {
+                            name: 'remo con barra',
+                            rest_time: 90,
+                            use_discs: true,
+                            bar_weight: 20,
+                            sets: [
+                                { set_number: 1, weight: 50, reps: '12' },
+                                { set_number: 2, weight: 60, reps: '10' },
+                                { set_number: 3, weight: 70, reps: '8' }
+                            ]
+                        },
+                        {
+                            name: 'curl de biceps con barra',
+                            rest_time: 60,
+                            use_discs: true,
+                            bar_weight: 7.5,
+                            sets: [
+                                { set_number: 1, weight: 27.5, reps: '12' },
+                                { set_number: 2, weight: 32.5, reps: '10' }
+                            ]
+                        }
+                    ]
+                }
+            ];
+            saveRoutines('max', routines);
+
+            const logs = [
+                {
+                    id: 200004,
+                    routine_id: 100002,
+                    routine_title: 'Pecho y Tríceps Leyenda',
+                    duration: 3200,
+                    volume: 2450,
+                    total_sets: 6,
+                    total_reps: 67,
+                    created_at: '2026-06-08T18:00:00.000Z',
+                    date: '2026-06-08T18:00:00.000Z',
+                    exercises: []
+                },
+                {
+                    id: 200005,
+                    routine_id: 100002,
+                    routine_title: 'Pecho y Tríceps Leyenda',
+                    duration: 3100,
+                    volume: 2680,
+                    total_sets: 6,
+                    total_reps: 67,
+                    created_at: '2026-06-12T18:00:00.000Z',
+                    date: '2026-06-12T18:00:00.000Z',
+                    exercises: []
+                },
+                {
+                    id: 200006,
+                    routine_id: 100002,
+                    routine_title: 'Pecho y Tríceps Leyenda',
+                    duration: 3000,
+                    volume: 2900,
+                    total_sets: 6,
+                    total_reps: 67,
+                    created_at: new Date().toISOString(),
+                    date: new Date().toISOString(),
+                    exercises: []
+                }
+            ];
+            saveWorkoutLogs('max', logs);
         }
 
         if (!currentUsername) {
@@ -700,8 +1122,8 @@
             document.querySelectorAll('.nav-guest-only').forEach(el => el.style.display = 'block');
 
             // Unauthenticated view
-            const path = window.location.pathname;
-            if (path.endsWith('app.html')) {
+            const path = window.location.pathname.toLowerCase();
+            if (path.includes('app.html')) {
                 // Show login state
                 const outEl = document.getElementById('state-logged-out');
                 if (outEl) outEl.style.display = 'block';
@@ -824,7 +1246,7 @@
                         handleRegister();
                     };
                 }
-            } else if (path.endsWith('routines.html') || path.endsWith('config.html')) {
+            } else if (path.includes('routines.html') || path.includes('config.html')) {
                 // Redirect unauthorized page views
                 window.location.href = 'app.html';
             }
@@ -833,7 +1255,7 @@
 
         // Authenticated view
         const profile = getProfile(currentUsername);
-        const path = window.location.pathname;
+        const path = window.location.pathname.toLowerCase();
 
         // Toggle navbar links
         document.querySelectorAll('.nav-auth-only').forEach(el => el.style.display = 'block');
@@ -858,7 +1280,7 @@
         }
 
         // Handle page-specific overrides
-        if (path.endsWith('app.html')) {
+        if (path.includes('app.html')) {
             const outEl = document.getElementById('state-logged-out');
             if (outEl) outEl.style.display = 'none';
 
@@ -1058,7 +1480,9 @@
 
             const uRec = getUsers()[currentUsername];
             const emailEl = document.getElementById('email');
-            if (emailEl && uRec) emailEl.value = uRec.email;
+            if (emailEl) {
+                emailEl.value = localStorage.getItem('logged_in_user_email') || (uRec && uRec.email) || '';
+            }
 
             // Handle static file upload
             const fileInput = document.getElementById('avatarInput') || document.getElementById('avatar');
@@ -1085,34 +1509,77 @@
                     const avatarFile = fileInput ? fileInput.files[0] : null;
 
                     const users = getUsers();
-                    const prevData = users[currentUsername];
+                    const prevData = users[currentUsername] || { password: '' };
 
-                    if (newUname !== currentUsername && users[newUname]) {
-                        alert("El nombre de usuario ya está en uso.");
-                        return;
-                    }
-
-                    // Save new avatar base64 if uploaded
-                    if (avatarFile) {
-                        const reader = new FileReader();
-                        reader.onload = function(evt) {
-                            const base64Data = evt.target.result;
-                            localStorage.setItem('user_avatar', base64Data);
-                            saveData();
-                        };
-                        reader.readAsDataURL(avatarFile);
+                    // Pre-check username uniqueness in Supabase if active
+                    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                        (async () => {
+                            if (newUname !== currentUsername) {
+                                try {
+                                    const { data: existing } = await supabaseClient
+                                        .from('user_profiles')
+                                        .select('id')
+                                        .eq('username', newUname);
+                                    if (existing && existing.length > 0) {
+                                        alert("El nombre de usuario ya está en uso.");
+                                        return;
+                                    }
+                                } catch (err) {
+                                    console.error("Error checking username uniqueness:", err);
+                                }
+                            }
+                            proceedToSave();
+                        })();
                     } else {
-                        saveData();
+                        if (newUname !== currentUsername && users[newUname]) {
+                            alert("El nombre de usuario ya está en uso.");
+                            return;
+                        }
+                        proceedToSave();
                     }
 
-                    function saveData() {
+                    function proceedToSave() {
+                        // Save new avatar base64 if uploaded
+                        if (avatarFile) {
+                            const reader = new FileReader();
+                            reader.onload = function(evt) {
+                                const base64Data = evt.target.result;
+                                localStorage.setItem('user_avatar', base64Data);
+                                saveData();
+                            };
+                            reader.readAsDataURL(avatarFile);
+                        } else {
+                            saveData();
+                        }
+                    }
+
+                    async function saveData() {
                         const avatarVal = localStorage.getItem('user_avatar') || '';
                         
                         delete users[currentUsername];
                         users[newUname] = { email: newEmail, password: prevData.password, avatar: avatarVal };
                         saveUsers(users);
+                        localStorage.setItem('logged_in_user_email', newEmail);
 
-                        // Migrate profile and histories to new username
+                        // Save changes to Supabase in the background if active
+                        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                            const userId = localStorage.getItem('logged_in_user_id');
+                            if (userId) {
+                                try {
+                                    const { error } = await supabaseClient
+                                        .from('user_profiles')
+                                        .update({ username: newUname, email: newEmail })
+                                        .eq('id', userId);
+                                    if (error) {
+                                        console.error("Error updating profile in Supabase:", error);
+                                    }
+                                } catch (err) {
+                                    console.error("Exception updating profile in Supabase:", err);
+                                }
+                            }
+                        }
+
+                        // Migrate profile and histories to new username in localStorage
                         if (newUname !== currentUsername) {
                             const profileVal = localStorage.getItem('profile_' + currentUsername);
                             if (profileVal) {
